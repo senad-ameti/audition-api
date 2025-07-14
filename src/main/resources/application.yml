@@ -2,7 +2,7 @@ spring:
   application:
     name: audition-api
   config:
-    import: "optional:configserver:"
+    import: "optional:configserver:http://localhost:8888/"
   main:
     allow-bean-definition-overriding: true
   autoconfigure:
@@ -10,9 +10,13 @@ spring:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   mvc:
     throw-exception-if-no-handler-found: true
+    problemdetails:
+      enabled: true
   sleuth:
     sampler:
       probability: 1.0
+  profiles:
+    active: dev
 server:
   max-http-request-header-size: 16KB
 management:
@@ -26,3 +30,6 @@ management:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+audition:
+  service:
+    url: https://jsonplaceholder.typicode.com
