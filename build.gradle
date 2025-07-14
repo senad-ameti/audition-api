@@ -1,24 +1,25 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.0.3'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'io.spring.dependency-management' version '1.1.7'
     id "maven-publish"
     id 'jacoco'
-    id "com.github.spotbugs" version "5.0.14"
-    id "io.freefair.lombok" version "8.0.1"
-    // TODO Enable checkstyle and PMD. Fix all the relevant issues.
-    //id "checkstyle"
-    //id "pmd"
+    id "com.github.spotbugs" version "5.2.1"
+    id "io.freefair.lombok" version "8.14"
+  //  id "checkstyle"
+   // id "pmd"
 }
 
 group = 'com.audition'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
-targetCompatibility = '17'
 
+java {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
 
 // TODO allow for code-analysis.gradle to be applied for code analysis.
-// apply from: 'config/code-analysis.gradle'
+//apply from: 'config/code-analysis.gradle'
 
 configurations {
     compileOnly {
@@ -33,37 +34,44 @@ repositories {
 ext {
     set('springCloudVersion', "2022.0.1")
     set('logbackVersion', "1.4.5")
+    set('logstashLogbackVersion', "7.3")
+
     set('slf4jVersion', "2.0.5")
     set('springdocVersion', "2.0.2")
+    set('otelInstrumentationVersion', "2.17.0")
 }
 
 dependencies {
+    // reorder the libraries according to their usage
+    // add spring-boot-starter-validation for validation of controller request params
 
-    // TODO Clean up unused dependencies. Add comments on consideration on any improvements you made.
-    implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    // base dependencies
     implementation "org.springframework.boot:spring-boot-starter-web"
-    implementation "org.springframework.cloud:spring-cloud-starter-config"
-    implementation "org.springframework.boot:spring-boot-starter-webflux"
+    implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-aop"
+
+   // implementation 'com.google.guava:guava:YOUR_GUAVA_VERSION'
+
+    // mornitoring
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "io.micrometer:micrometer-tracing-bridge-brave"
-    implementation "io.micrometer:micrometer-tracing"
-    implementation "io.micrometer:micrometer-registry-prometheus"
     implementation "io.micrometer:context-propagation"
-    implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j"
-    implementation "org.springframework.cloud:spring-cloud-starter-config"
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
-    developmentOnly "org.springframework.boot:spring-boot-devtools"
-    runtimeOnly "io.micrometer:micrometer-registry-prometheus"
-
-
+    // log related
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
     implementation "ch.qos.logback:logback-core:${logbackVersion}"
     implementation "ch.qos.logback:logback-classic:${logbackVersion}"
+    runtimeOnly "net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}"
 
+    // dev tools
+    developmentOnly "org.springframework.boot:spring-boot-devtools"
+
+    // testing
     testImplementation "org.springframework.boot:spring-boot-starter-test"
-    testImplementation "io.projectreactor:reactor-test"
+    // Test framework declaration
+    testImplementation platform("org.junit:junit-bom:5.10.0") // BOM for version management
+    testImplementation 'org.junit.jupiter:junit-jupiter'      // JUnit 5 core
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // Required for IDE support
 }
 
 dependencyManagement {
@@ -72,15 +80,25 @@ dependencyManagement {
     }
 }
 
-
 task prepareGitHooks(type: Copy) {
     from "$projectDir/git-hooks"
     into "$projectDir/.git/hooks"
     include "*"
 }
-tasks.matching { it.name != 'prepareGitHooks' }.all { Task task -> task.dependsOn prepareGitHooks }
 
+tasks.matching { it.name != 'prepareGitHooks' }.all { Task task -> task.dependsOn prepareGitHooks }
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs += [
+            "--enable-native-access=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang=ALL-UNNAMED"
+    ]
 }
