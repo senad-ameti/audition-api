@@ -77,5 +77,67 @@ Applicants need to do the following to submit their work:
 ---
 ## Additional Information based on the implementation
 
-This section MUST be completed by applicants. It allows applicants to showcase their view on how an application can/should be documented. 
-Applicants can choose to do this in a separate markdown file that needs to be included when the code is committed. 
+# Building:
+Check out the code using command:
+```
+unzip audition-api.zip -d directory-cloned-into
+cd directory-cloned-into/audition-api/
+```
+
+Navigate to the directory-cloned-into and run command:
+```
+gradle build
+```
+
+If gradle is not installed, please use the following command:
+```
+./gradlew build    or ./gradlew.bat build (for Windows)
+```
+
+This project will be packaged into a runnable jar file.
+
+This will run all the tests and build the application into directory-cloned-into/audition-api/build/libs/audition-api-0.0.1-SNAPSHOT.jar
+
+# Running:
+Run command:
+
+```
+ java -jar build/libs/audition-api-0.0.1-SNAPSHOT.jar
+```
+
+# Apis supported:
+Get all the posts:
+```
+localhost:8080/posts
+```
+
+Get posts and filtered by userId
+```
+localhost:8080/posts?userId=1
+```
+
+Get posts by postId
+```
+localhost:8080/posts/10
+```
+
+Get post by id and also all comments of this post
+```
+localhost:8080/posts/10/comments
+```
+
+Get all comments of this post
+```
+localhost:8080/comments?postId=1
+```
+
+# Logging, Tracing and Metrics instrumentation
+All the logs contain traceId and spanId.
+
+For dev profile and DEBUG log level, the request body and response body will be logged.
+
+All the response headers contain traceparent and it contains the traceId and spanId.
+
+# Further actions
+Add open-api doc for the APIs.
+
