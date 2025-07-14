@@ -2,7 +2,7 @@ tasks.withType(Checkstyle) {
     reports {
         xml.required = false
         html.required = true
-        html.stylesheet resources.text.fromFile('config/checkstyle/checkstyle-noframes-sorted.xsl')
+        html.stylesheet = resources.text.fromFile('config/checkstyle/checkstyle-noframes-sorted.xsl')
     }
 }
 
@@ -13,13 +13,14 @@ checkstyle {
     reportsDir = file("$project.buildDir/reports/checkstyle")
     showViolations = true
     toolVersion = "10.9.3"
+    sourceSets = [sourceSets.main]
 }
 
 checkstyleMain.source = "src/main/java"
 
 pmd {
     consoleOutput = true
-    toolVersion = "6.45.0"
+    toolVersion = "7.0.0"
     rulesMinimumPriority = 5
 
     ignoreFailures = false
@@ -61,9 +62,16 @@ jacocoTestCoverageVerification {
 }
 
 spotbugs {
-    ignoreFailures = true
+    ignoreFailures = false
     effort = 'max'
     reportLevel = 'high'
+
+    // Add JVM args for Java 17+ compatibility
+    jvmArgs = [
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '-Dspotbugs.source.level=17',
+            '-Dspotbugs.target.level=17'
+    ]
 }
 
 spotbugsMain {
