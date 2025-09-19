@@ -1,24 +1,21 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.0.3'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version '3.5.5'
+    id 'io.spring.dependency-management' version '1.1.7'
     id "maven-publish"
     id 'jacoco'
     id "com.github.spotbugs" version "5.0.14"
-    id "io.freefair.lombok" version "8.0.1"
-    // TODO Enable checkstyle and PMD. Fix all the relevant issues.
-    //id "checkstyle"
-    //id "pmd"
+    id "io.freefair.lombok" version "8.13.1"
+    id 'checkstyle'
+    id 'pmd'
 }
 
 group = 'com.audition'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
-targetCompatibility = '17'
+sourceCompatibility = '22'
+targetCompatibility = '22'
 
-
-// TODO allow for code-analysis.gradle to be applied for code analysis.
-// apply from: 'config/code-analysis.gradle'
+apply from: "$rootProject.projectDir/config/code-analysis.gradle"
 
 configurations {
     compileOnly {
@@ -31,10 +28,11 @@ repositories {
 }
 
 ext {
-    set('springCloudVersion', "2022.0.1")
-    set('logbackVersion', "1.4.5")
+    set('springCloudVersion', "2025.0.0")
+    set('logbackVersion', "1.5.18")
     set('slf4jVersion', "2.0.5")
-    set('springdocVersion', "2.0.2")
+    set('springdocVersion', "2.8.13")
+    set('telemetryVersion', '1.41.0')
 }
 
 dependencies {
@@ -61,9 +59,20 @@ dependencies {
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
     implementation "ch.qos.logback:logback-core:${logbackVersion}"
     implementation "ch.qos.logback:logback-classic:${logbackVersion}"
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
+    implementation "io.opentelemetry:opentelemetry-api:${telemetryVersion}"
+    implementation "io.opentelemetry:opentelemetry-sdk:${telemetryVersion}"
+    // provides ConfigProperties bean
+    implementation "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:${telemetryVersion}"
+    // exporter (OTLP for example)
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp:${telemetryVersion}"
+    // Spring Boot starter (ties everything together)
+    implementation "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter:2.10.0"
 
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "io.projectreactor:reactor-test"
+
 }
 
 dependencyManagement {
@@ -72,6 +81,10 @@ dependencyManagement {
     }
 }
 
+checkstyle {
+    toolVersion = '10.20.0' // latest stable version
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+}
 
 task prepareGitHooks(type: Copy) {
     from "$projectDir/git-hooks"
@@ -83,4 +96,25 @@ tasks.matching { it.name != 'prepareGitHooks' }.all { Task task -> task.dependsO
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.required = false
+        html.required = true // easier to read report
+    }
+}
+jacocoTestCoverageVerification {
+    dependsOn test
+}
+
+check {
+    dependsOn jacocoTestCoverageVerification
+}
+
+configurations.all {
+    resolutionStrategy {
+        force "org.ow2.asm:asm:9.6"
+        force "org.ow2.asm:asm-tree:9.6"
+    }
 }

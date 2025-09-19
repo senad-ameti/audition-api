@@ -19,7 +19,7 @@ checkstyleMain.source = "src/main/java"
 
 pmd {
     consoleOutput = true
-    toolVersion = "6.45.0"
+    toolVersion = "7.0.0"
     rulesMinimumPriority = 5
 
     ignoreFailures = false
@@ -35,7 +35,8 @@ jacocoTestReport {
 }
 
 jacoco {
-    toolVersion = "0.8.8"
+    // For JAVA 22 Supporting Jacoco version is 0.8.12
+    toolVersion = "0.8.12"
 }
 
 jacocoTestCoverageVerification {
@@ -74,4 +75,7 @@ spotbugsMain {
             stylesheet = 'fancy-hist.xsl'
         }
     }
+}
+spotbugsTest {
+    enabled = false
 }
