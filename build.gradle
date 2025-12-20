@@ -1,19 +1,19 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.0.3'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version "${dependencyManagementVersion}"
     id "maven-publish"
     id 'jacoco'
-    id "com.github.spotbugs" version "5.0.14"
-    id "io.freefair.lombok" version "8.0.1"
+    id "com.github.spotbugs" version "${spotbugsVersion}"
+    id "io.freefair.lombok" version "${lombokVersion}"
     id "checkstyle"
     id "pmd"
 }
 
-group = 'com.audition'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
-targetCompatibility = '17'
+group = "${group}"
+version = "${projectVersion}"
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
 
 
 // TODO allow for code-analysis.gradle to be applied for code analysis.
@@ -30,10 +30,10 @@ repositories {
 }
 
 ext {
-    set('springCloudVersion', "2022.0.1")
-    set('logbackVersion', "1.4.5")
-    set('slf4jVersion', "2.0.5")
-    set('springdocVersion', "2.0.2")
+    set('springCloudVersion', springCloudVersion)
+    set('logbackVersion', logbackVersion)
+    set('slf4jVersion', slf4jVersion)
+    set('springdocVersion', springdocVersion)
 }
 
 dependencies {
@@ -85,6 +85,6 @@ tasks.named('test') {
 }
 
 checkstyle {
-    toolVersion = '10.12.4'
+    toolVersion = checkstyleToolVersion
     configDirectory = file("${rootDir}/config/checkstyle")
 }
