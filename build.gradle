@@ -16,8 +16,7 @@ sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
 
 
-// TODO allow for code-analysis.gradle to be applied for code analysis.
-// apply from: 'config/code-analysis.gradle'
+apply from: 'config/code-analysis.gradle'
 
 configurations {
     compileOnly {
