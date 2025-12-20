@@ -17,6 +17,7 @@ import com.audition.common.exception.SystemException;
 import com.audition.common.logging.AuditionLogger;
 import com.audition.integration.AuditionIntegrationClient;
 import com.audition.model.AuditionPost;
+import com.audition.model.Comment;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -483,6 +484,195 @@ class AuditionIntegrationClientTest {
                 () -> assertEquals(1, post.getComments().size()),
                 () -> assertEquals("Comment Name", post.getComments().get(0).getName()),
                 () -> assertEquals("", post.getComments().get(0).getBody())
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("getCommentsForPost")
+    class GetCommentsForPostTests {
+
+        @Test
+        @DisplayName("Returns comments when upstream responds with valid data")
+        void returnsComments() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, """
+                [
+                  {"postId": 1, "id": 1, "name": "Comment 1", "email": "user1@test.com", "body": "Comment body 1"},
+                  {"postId": 1, "id": 2, "name": "Comment 2", "email": "user2@test.com", "body": "Comment body 2"}
+                ]
+                """);
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertAll(
+                () -> assertEquals(2, comments.size()),
+                () -> assertEquals("Comment 1", comments.get(0).getName()),
+                () -> assertEquals("user2@test.com", comments.get(1).getEmail())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns empty list and logs when no comments exist")
+        void returnsEmptyListWhenNoComments() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, "[]");
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertTrue(comments.isEmpty());
+            verify(auditionLogger).debug(any(), eq("No comments found for post with id " + postId));
+        }
+
+        @Test
+        @DisplayName("Throws SystemException with 404 when comments not found")
+        void throwsNotFoundExceptionWhenCommentsNotFound() {
+            final String postId = "999";
+            stubPostCommentsResponse(postId, 404, "{}");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getCommentsForPost(postId));
+
+            assertAll(
+                () -> assertEquals("Cannot find comments for Post with id " + postId, exception.getMessage()),
+                () -> assertEquals("Resource Not Found", exception.getTitle()),
+                () -> assertEquals(404, exception.getStatusCode())
+            );
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with 400 Bad Request")
+        void throwsSystemExceptionForBadRequest() {
+            final String postId = "invalid";
+            stubPostCommentsResponse(postId, 400, "Bad Request");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with 401 Unauthorized")
+        void throwsSystemExceptionForUnauthorized() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 401, "Unauthorized");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with 403 Forbidden")
+        void throwsSystemExceptionForForbidden() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 403, "Forbidden");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Returns comments with special characters correctly")
+        void handlesCommentsWithSpecialCharacters() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, """
+                [
+                  {"postId": 1, "id": 1, "name": "Special <chars> & 'quotes'", "email": "test@émail.com", "body": "Body with unicode: éàü"}
+                ]
+                """);
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertAll(
+                () -> assertEquals(1, comments.size()),
+                () -> assertEquals("Special <chars> & 'quotes'", comments.get(0).getName()),
+                () -> assertEquals("test@émail.com", comments.get(0).getEmail()),
+                () -> assertEquals("Body with unicode: éàü", comments.get(0).getBody())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns comments with newlines in body correctly")
+        void handlesCommentsWithNewlines() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, """
+                [
+                  {"postId": 1, "id": 1, "name": "Comment", "email": "test@test.com", "body": "Line1\\nLine2\\nLine3"}
+                ]
+                """);
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertAll(
+                () -> assertEquals(1, comments.size()),
+                () -> assertEquals("Line1\nLine2\nLine3", comments.get(0).getBody())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns multiple comments in correct order")
+        void handlesMultipleComments() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, """
+                [
+                  {"postId": 1, "id": 1, "name": "First", "email": "first@test.com", "body": "First body"},
+                  {"postId": 1, "id": 2, "name": "Second", "email": "second@test.com", "body": "Second body"},
+                  {"postId": 1, "id": 3, "name": "Third", "email": "third@test.com", "body": "Third body"},
+                  {"postId": 1, "id": 4, "name": "Fourth", "email": "fourth@test.com", "body": "Fourth body"},
+                  {"postId": 1, "id": 5, "name": "Fifth", "email": "fifth@test.com", "body": "Fifth body"}
+                ]
+                """);
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertAll(
+                () -> assertEquals(5, comments.size()),
+                () -> assertEquals(1, comments.get(0).getId()),
+                () -> assertEquals(5, comments.get(4).getId()),
+                () -> assertEquals("Fifth", comments.get(4).getName())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns comment with null name field")
+        void handlesCommentWithNullName() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, """
+                [
+                  {"postId": 1, "id": 1, "name": null, "email": "test@test.com", "body": "Body content"}
+                ]
+                """);
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertAll(
+                () -> assertEquals(1, comments.size()),
+                () -> assertNull(comments.get(0).getName()),
+                () -> assertEquals("test@test.com", comments.get(0).getEmail())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns comment with empty body field")
+        void handlesCommentWithEmptyBody() {
+            final String postId = "1";
+            stubPostCommentsResponse(postId, 200, """
+                [
+                  {"postId": 1, "id": 1, "name": "Comment Name", "email": "test@test.com", "body": ""}
+                ]
+                """);
+
+            final List<Comment> comments = auditionIntegrationClient.getCommentsForPost(postId);
+
+            assertAll(
+                () -> assertEquals(1, comments.size()),
+                () -> assertEquals("Comment Name", comments.get(0).getName()),
+                () -> assertEquals("", comments.get(0).getBody())
             );
         }
     }

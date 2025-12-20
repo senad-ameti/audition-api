@@ -79,7 +79,7 @@ public class AuditionIntegrationClient {
         return post;
     }
 
-    private List<Comment> getCommentsForPost(final String postId) {
+    public List<Comment> getCommentsForPost(final String postId) {
         try {
             Comment[] comments = Optional.ofNullable(
                     restTemplate.getForObject(postCommentsUrl, Comment[].class, postId))

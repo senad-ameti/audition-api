@@ -373,6 +373,158 @@ class AuditionIntegrationClientTest {
         }
     }
 
+    @Nested
+    @DisplayName("getCommentsForPost")
+    class GetCommentsForPostTests {
+
+        @Test
+        @DisplayName("Returns comments when upstream provides data for given post id")
+        void returnsComments() {
+            final String postId = "1";
+            Comment comment1 = buildComment(1, 1, "comment-name-1", "email1@test.com", "comment-body-1");
+            Comment comment2 = buildComment(1, 2, "comment-name-2", "email2@test.com", "comment-body-2");
+
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[]{comment1, comment2});
+
+            List<Comment> result = client.getCommentsForPost(postId);
+
+            assertEquals(2, result.size());
+            assertEquals("comment-name-1", result.get(0).getName());
+            assertEquals("email2@test.com", result.get(1).getEmail());
+            verify(restTemplate).getForObject(POST_COMMENTS_URL, Comment[].class, postId);
+        }
+
+        @Test
+        @DisplayName("Returns empty list and logs when no comments exist")
+        void returnsEmptyListWhenNoComments() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[0]);
+
+            List<Comment> result = client.getCommentsForPost(postId);
+
+            assertTrue(result.isEmpty());
+            verify(auditionLogger).debug(any(Logger.class), eq("No comments found for post with id " + postId));
+        }
+
+        @Test
+        @DisplayName("Returns empty list and logs when upstream returns null")
+        void returnsEmptyListWhenNull() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId)).thenReturn(null);
+
+            List<Comment> result = client.getCommentsForPost(postId);
+
+            assertTrue(result.isEmpty());
+            verify(auditionLogger).debug(any(Logger.class), eq("No comments found for post with id " + postId));
+        }
+
+        @Test
+        @DisplayName("Throws SystemException with 404 status when comments not found")
+        void throwsNotFoundExceptionWhenCommentsNotFound() {
+            final String postId = "999";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getCommentsForPost(postId));
+
+            assertEquals("Cannot find comments for Post with id " + postId, exception.getMessage());
+            assertEquals("Resource Not Found", exception.getTitle());
+            assertEquals(404, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for bad request error")
+        void throwsSystemExceptionForBadRequest() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for unauthorized error")
+        void throwsSystemExceptionForUnauthorized() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for forbidden error")
+        void throwsSystemExceptionForForbidden() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Forbidden"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Returns comments with special characters correctly")
+        void handlesCommentsWithSpecialCharacters() {
+            final String postId = "1";
+            Comment comment = buildComment(1, 1, "Special <name> & 'quotes'",
+                "test@émail.com", "Body with unicode: éàü\nand newlines");
+
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[]{comment});
+
+            List<Comment> result = client.getCommentsForPost(postId);
+
+            assertEquals(1, result.size());
+            assertEquals("Special <name> & 'quotes'", result.get(0).getName());
+            assertEquals("test@émail.com", result.get(0).getEmail());
+            assertEquals("Body with unicode: éàü\nand newlines", result.get(0).getBody());
+        }
+
+        @Test
+        @DisplayName("Returns multiple comments in correct order")
+        void handlesMultipleCommentsInOrder() {
+            final String postId = "1";
+            Comment comment1 = buildComment(1, 1, "First", "first@test.com", "First body");
+            Comment comment2 = buildComment(1, 2, "Second", "second@test.com", "Second body");
+            Comment comment3 = buildComment(1, 3, "Third", "third@test.com", "Third body");
+
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[]{comment1, comment2, comment3});
+
+            List<Comment> result = client.getCommentsForPost(postId);
+
+            assertEquals(3, result.size());
+            assertEquals(1, result.get(0).getId());
+            assertEquals(2, result.get(1).getId());
+            assertEquals(3, result.get(2).getId());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for internal server error")
+        void throwsSystemExceptionForServerError() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Server Error"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getCommentsForPost(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+    }
+
     private AuditionPost buildPost(final int id, final int userId, final String title, final String body) {
         AuditionPost post = new AuditionPost();
         post.setId(id);
