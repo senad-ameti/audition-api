@@ -2,7 +2,6 @@ package component.com.audition.integration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +22,6 @@ import com.audition.model.Comment;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,8 +31,6 @@ import org.mockito.quality.Strictness;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
 import org.wiremock.spring.EnableWireMock;
 import org.wiremock.spring.InjectWireMock;
@@ -59,22 +55,12 @@ class AuditionIntegrationClientTest {
     @SpyBean
     private AuditionLogger auditionLogger;
 
-    @Autowired
-    private CacheManager cacheManager;
+    // caching is disabled by default for tests; cache-specific behavior lives in its own test class
+    // (AuditionIntegrationClientCacheBehaviorTest)
 
     @AfterEach
     void resetWireMockInteractions() {
         wireMockServer.resetAll();
-        clearCaches();
-    }
-
-    private void clearCaches() {
-        cacheManager.getCacheNames().forEach(name -> {
-            Cache cache = cacheManager.getCache(name);
-            if (cache != null) {
-                cache.clear();
-            }
-        });
     }
 
     @Nested
@@ -762,162 +748,6 @@ class AuditionIntegrationClientTest {
                 .withStatus(status)
                 .withHeader("Content-Type", "application/json")
                 .withBody(responseBody)));
-    }
-
-    @Nested
-    @DisplayName("Cache Behavior Tests")
-    class CacheBehaviorTests {
-
-        @BeforeEach
-        void setUpCacheTests() {
-            clearCaches();
-        }
-
-        @Test
-        @DisplayName("getPosts should cache results and avoid duplicate API calls")
-        void testGetPostsCaching() {
-            // Given
-            stubPostsResponse(200, """
-                [
-                  {"userId": 1, "id": 1, "title": "Cached Post", "body": "Test body"}
-                ]
-                """);
-
-            // When - First call
-            final List<AuditionPost> firstResult = auditionIntegrationClient.getPosts();
-
-            // When - Second call (should hit cache)
-            final List<AuditionPost> secondResult = auditionIntegrationClient.getPosts();
-
-            // Then
-            assertEquals(1, firstResult.size());
-            assertEquals(1, secondResult.size());
-            assertEquals("Cached Post", firstResult.get(0).getTitle());
-            assertEquals("Cached Post", secondResult.get(0).getTitle());
-
-            // Verify WireMock was called only once
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts")));
-        }
-
-        @Test
-        @DisplayName("getPostById should cache results per post ID")
-        void testGetPostByIdCaching() {
-            // Given
-            final String postId = "123";
-            stubPostByIdResponse(postId, 200, """
-                {"userId": 1, "id": 123, "title": "Cached Post", "body": "Test body"}
-                """);
-
-            // When - First call
-            final AuditionPost firstResult = auditionIntegrationClient.getPostById(postId);
-
-            // When - Second call (should hit cache)
-            final AuditionPost secondResult = auditionIntegrationClient.getPostById(postId);
-
-            // Then
-            assertEquals(123, firstResult.getId());
-            assertEquals(123, secondResult.getId());
-            assertEquals("Cached Post", firstResult.getTitle());
-            assertEquals("Cached Post", secondResult.getTitle());
-
-            // Verify WireMock was called only once
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts/" + postId)));
-        }
-
-        @Test
-        @DisplayName("getCommentsForPost should cache results per post ID")
-        void testGetCommentsForPostCaching() {
-            // Given
-            final String postId = "123";
-            stubPostCommentsResponse(postId, 200, """
-                [
-                  {"id": 1, "postId": 123, "name": "Cached Comment", "email": "test@example.com", "body": "Comment body"}
-                ]
-                """);
-
-            // When - First call
-            final List<Comment> firstResult = auditionIntegrationClient.getCommentsForPost(postId);
-
-            // When - Second call (should hit cache)
-            final List<Comment> secondResult = auditionIntegrationClient.getCommentsForPost(postId);
-
-            // Then
-            assertEquals(1, firstResult.size());
-            assertEquals(1, secondResult.size());
-            assertEquals("Cached Comment", firstResult.get(0).getName());
-            assertEquals("Cached Comment", secondResult.get(0).getName());
-
-            // Verify WireMock was called only once
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts/" + postId + "/comments")));
-        }
-
-        @Test
-        @DisplayName("getPostWithComments should cache complete result and avoid duplicate external calls")
-        void testGetPostWithCommentsCaching() {
-            // Given
-            final String postId = "123";
-            stubPostByIdResponse(postId, 200, """
-                {"userId": 1, "id": 123, "title": "Test Post", "body": "Test body"}
-                """);
-            stubPostCommentsResponse(postId, 200, """
-                [
-                  {"id": 1, "postId": 123, "name": "Test Comment", "email": "test@example.com", "body": "Comment body"}
-                ]
-                """);
-
-            // When - First call
-            final AuditionPost firstResult = auditionIntegrationClient.getPostWithComments(postId);
-
-            // When - Second call (should hit cache for the complete method)
-            final AuditionPost secondResult = auditionIntegrationClient.getPostWithComments(postId);
-
-            // Then
-            assertEquals(123, firstResult.getId());
-            assertEquals(123, secondResult.getId());
-            assertEquals("Test Post", firstResult.getTitle());
-            assertEquals("Test Post", secondResult.getTitle());
-            assertEquals(1, firstResult.getComments().size());
-            assertEquals(1, secondResult.getComments().size());
-            assertEquals("Test Comment", firstResult.getComments().get(0).getName());
-            assertEquals("Test Comment", secondResult.getComments().get(0).getName());
-
-            // Verify WireMock calls - should be called once each for the first invocation only
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts/" + postId)));
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts/" + postId + "/comments")));
-        }
-
-        @Test
-        @DisplayName("Different post IDs should have separate cache entries")
-        void testSeparateCacheEntriesForDifferentPostIds() {
-            // Given
-            final String postId1 = "1";
-            final String postId2 = "2";
-
-            stubPostByIdResponse(postId1, 200, """
-                {"userId": 1, "id": 1, "title": "Post 1", "body": "Body 1"}
-                """);
-            stubPostByIdResponse(postId2, 200, """
-                {"userId": 1, "id": 2, "title": "Post 2", "body": "Body 2"}
-                """);
-
-            // When
-            final AuditionPost result1 = auditionIntegrationClient.getPostById(postId1);
-            final AuditionPost result2 = auditionIntegrationClient.getPostById(postId2);
-
-            // Call again to test caching
-            final AuditionPost cachedResult1 = auditionIntegrationClient.getPostById(postId1);
-            final AuditionPost cachedResult2 = auditionIntegrationClient.getPostById(postId2);
-
-            // Then
-            assertEquals("Post 1", result1.getTitle());
-            assertEquals("Post 2", result2.getTitle());
-            assertEquals("Post 1", cachedResult1.getTitle());
-            assertEquals("Post 2", cachedResult2.getTitle());
-
-            // Verify each endpoint was called only once
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts/" + postId1)));
-            wireMockServer.verify(1, getRequestedFor(urlEqualTo("/posts/" + postId2)));
-        }
     }
 }
 

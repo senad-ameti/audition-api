@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.wiremock.spring.EnableWireMock;
@@ -36,21 +34,10 @@ class AuditionControllerTest {
     @InjectWireMock
     private WireMockServer wireMockServer;
 
-    @Autowired
-    private CacheManager cacheManager;
-
     @BeforeEach
     void resetWireMock() {
         if (wireMockServer != null) {
             wireMockServer.resetAll();
-        }
-        if (cacheManager != null) {
-            cacheManager.getCacheNames().forEach(name -> {
-                Cache c = cacheManager.getCache(name);
-                if (c != null) {
-                    c.clear();
-                }
-            });
         }
     }
 
