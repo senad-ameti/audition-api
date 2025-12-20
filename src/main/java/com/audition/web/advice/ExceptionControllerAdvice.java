@@ -1,11 +1,15 @@
 package com.audition.web.advice;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 
 import com.audition.common.exception.SystemException;
 import com.audition.common.logging.AuditionLogger;
 import io.micrometer.common.util.StringUtils;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +37,18 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     ProblemDetail handleHttpClientException(final HttpClientErrorException e) {
         return createProblemDetail(e, e.getStatusCode());
 
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ProblemDetail handleConstraintViolationException(final ConstraintViolationException e) {
+        final String errorMessage = e.getConstraintViolations().stream()
+            .map(ConstraintViolation::getMessage)
+            .collect(Collectors.joining(", "));
+
+        final ProblemDetail problemDetail = ProblemDetail.forStatus(BAD_REQUEST);
+        problemDetail.setDetail(errorMessage);
+        problemDetail.setTitle("Invalid Request");
+        return problemDetail;
     }
 
 

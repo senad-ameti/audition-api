@@ -2,6 +2,7 @@ package unit.com.audition.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,9 +10,16 @@ import static org.mockito.Mockito.when;
 import com.audition.model.AuditionPost;
 import com.audition.service.AuditionService;
 import com.audition.web.AuditionController;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.executable.ExecutableValidator;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,9 +39,16 @@ class AuditionControllerTest {
     @InjectMocks
     private AuditionController auditionController;
 
+    private Validator validator;
+    private ExecutableValidator executableValidator;
+
     @BeforeEach
     void setUp() {
         // Mockito will inject mocks into controller
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            validator = factory.getValidator();
+            executableValidator = validator.forExecutables();
+        }
     }
 
     @Nested
@@ -173,6 +188,90 @@ class AuditionControllerTest {
             AuditionPost result = auditionController.getPosts(postId);
 
             assertNull(result, "Controller should return null when service returns null");
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is null")
+        void throwsExceptionWhenPostIdIsNull() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {null};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID cannot be null or empty"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is empty")
+        void throwsExceptionWhenPostIdIsEmpty() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {""};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID cannot be null or empty"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is blank")
+        void throwsExceptionWhenPostIdIsBlank() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {"   "};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID cannot be null or empty"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is not a valid integer")
+        void throwsExceptionWhenPostIdIsNotInteger() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {"abc"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a valid integer"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is a decimal number")
+        void throwsExceptionWhenPostIdIsDecimal() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {"1.5"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a valid integer"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is zero")
+        void throwsExceptionWhenPostIdIsZero() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {"0"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a positive integer"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is negative")
+        void throwsExceptionWhenPostIdIsNegative() throws Exception {
+            Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {"-1"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a positive integer"));
         }
     }
 }

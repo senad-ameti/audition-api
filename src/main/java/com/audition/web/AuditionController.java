@@ -2,9 +2,11 @@ package com.audition.web;
 
 import com.audition.model.AuditionPost;
 import com.audition.service.AuditionService;
+import com.audition.web.validation.PositiveInteger;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 public class AuditionController {
 
     private final AuditionService auditionService;
@@ -26,12 +29,8 @@ public class AuditionController {
     }
 
     @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody AuditionPost getPosts(@PathVariable("id") final String postId) {
-        final AuditionPost auditionPosts = auditionService.getPostById(postId);
-
-        // TODO Add input validation
-
-        return auditionPosts;
+    public @ResponseBody AuditionPost getPosts(@PathVariable("id") @PositiveInteger final String postId) {
+        return auditionService.getPostById(postId);
     }
 
     // TODO Add additional methods to return comments for each post. Hint: Check https://jsonplaceholder.typicode.com/

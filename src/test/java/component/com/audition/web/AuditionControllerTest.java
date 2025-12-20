@@ -192,5 +192,50 @@ class AuditionControllerTest {
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.title", is("Test Title")));
         }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when postId is empty")
+        void returnsBadRequestWhenPostIdIsEmpty() throws Exception {
+            mockMvc.perform(get("/posts/ "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("Post ID cannot be null or empty")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when postId is not a valid integer")
+        void returnsBadRequestWhenPostIdIsNotInteger() throws Exception {
+            mockMvc.perform(get("/posts/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("Post ID must be a valid integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when postId is a decimal")
+        void returnsBadRequestWhenPostIdIsDecimal() throws Exception {
+            mockMvc.perform(get("/posts/1.5"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("Post ID must be a valid integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when postId is zero")
+        void returnsBadRequestWhenPostIdIsZero() throws Exception {
+            mockMvc.perform(get("/posts/0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("Post ID must be a positive integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when postId is negative")
+        void returnsBadRequestWhenPostIdIsNegative() throws Exception {
+            mockMvc.perform(get("/posts/-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("Post ID must be a positive integer")));
+        }
     }
 }
