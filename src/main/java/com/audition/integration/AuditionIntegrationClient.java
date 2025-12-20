@@ -1,10 +1,15 @@
 package com.audition.integration;
 
 import com.audition.common.exception.SystemException;
+import com.audition.common.logging.AuditionLogger;
 import com.audition.model.AuditionPost;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -13,14 +18,35 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class AuditionIntegrationClient {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AuditionIntegrationClient.class);
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
+    private final AuditionLogger logger;
+    private final String postsUrl;
+
+    public AuditionIntegrationClient(
+        @Autowired RestTemplate restTemplate,
+        @Autowired AuditionLogger logger,
+        @Value("${audition.integration.posts-url}") String postsUrl) {
+        this.restTemplate = restTemplate;
+        this.logger = logger;
+        this.postsUrl = postsUrl;
+    }
 
     public List<AuditionPost> getPosts() {
-        // TODO make RestTemplate call to get Posts from https://jsonplaceholder.typicode.com/posts
+        AuditionPost[] posts;
+        try {
+            posts = Optional.ofNullable(restTemplate.getForObject(postsUrl, AuditionPost[].class))
+                .orElse(new AuditionPost[0]);
+            if (posts.length == 0) {
+                logger.debug(LOG, "No posts found from external API");
+            }
+        } catch (final HttpClientErrorException e) {
+            // TODO Handle exceptions appropriately. Feel free to change this function as needed.
+            throw new SystemException("Unknown Error message");
+        }
 
-        return new ArrayList<>();
+        return Arrays.asList(posts);
     }
 
     public AuditionPost getPostById(final String id) {
