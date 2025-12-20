@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuditionController {
 
     @Autowired
-    AuditionService auditionService;
+    private transient AuditionService auditionService;
 
     // TODO Add a query param that allows data filtering. The intent of the filter is at developers discretion.
     @RequestMapping(value = "/posts", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)

@@ -6,9 +6,8 @@ plugins {
     id 'jacoco'
     id "com.github.spotbugs" version "5.0.14"
     id "io.freefair.lombok" version "8.0.1"
-    // TODO Enable checkstyle and PMD. Fix all the relevant issues.
-    //id "checkstyle"
-    //id "pmd"
+    id "checkstyle"
+    id "pmd"
 }
 
 group = 'com.audition'
@@ -83,4 +82,9 @@ tasks.matching { it.name != 'prepareGitHooks' }.all { Task task -> task.dependsO
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+checkstyle {
+    toolVersion = '10.12.4'
+    configDirectory = file("${rootDir}/config/checkstyle")
 }

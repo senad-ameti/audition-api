@@ -27,7 +27,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     private static final String DEFAULT_MESSAGE = "API Error occurred. Please contact support or administrator.";
 
     @Autowired
-    private AuditionLogger logger;
+    private transient AuditionLogger logger;
 
     @ExceptionHandler(HttpClientErrorException.class)
     ProblemDetail handleHttpClientException(final HttpClientErrorException e) {
@@ -90,6 +90,3 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         return INTERNAL_SERVER_ERROR;
     }
 }
-
-
-

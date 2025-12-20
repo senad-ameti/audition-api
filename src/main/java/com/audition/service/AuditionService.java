@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 public class AuditionService {
 
     @Autowired
-    private AuditionIntegrationClient auditionIntegrationClient;
+    private transient AuditionIntegrationClient auditionIntegrationClient;
 
 
     public List<AuditionPost> getPosts() {
