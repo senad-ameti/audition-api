@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -178,7 +179,7 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException when upstream responds with 400 Bad Request")
+        @DisplayName("Throws SystemException preserving error details when upstream responds with 400 Bad Request")
         void throwsSystemExceptionForBadRequest() {
             final String postId = "invalid";
             stubPostByIdResponse(postId, 400, "Bad Request");
@@ -186,11 +187,16 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getPostById(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("400")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(400, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
-        @DisplayName("Throws SystemException when upstream responds with 401 Unauthorized")
+        @DisplayName("Throws SystemException preserving error details when upstream responds with 401 Unauthorized")
         void throwsSystemExceptionForUnauthorized() {
             final String postId = "1";
             stubPostByIdResponse(postId, 401, "Unauthorized");
@@ -198,11 +204,16 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getPostById(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("401")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(401, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
-        @DisplayName("Throws SystemException when upstream responds with 403 Forbidden")
+        @DisplayName("Throws SystemException preserving error details when upstream responds with 403 Forbidden")
         void throwsSystemExceptionForForbidden() {
             final String postId = "1";
             stubPostByIdResponse(postId, 403, "Forbidden");
@@ -210,7 +221,12 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getPostById(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("403")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(403, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
@@ -348,7 +364,7 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException when comments endpoint returns 400 Bad Request")
+        @DisplayName("Throws SystemException preserving error details when comments endpoint returns 400 Bad Request")
         void throwsSystemExceptionForBadRequestOnComments() {
             final String postId = "1";
             stubPostByIdResponse(postId, 200, """
@@ -359,11 +375,16 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getPostWithComments(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("400")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(400, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
-        @DisplayName("Throws SystemException when post endpoint returns 401 Unauthorized")
+        @DisplayName("Throws SystemException preserving error details when post endpoint returns 401 Unauthorized")
         void throwsSystemExceptionForUnauthorizedOnPost() {
             final String postId = "1";
             stubPostByIdResponse(postId, 401, "Unauthorized");
@@ -371,11 +392,16 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getPostWithComments(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("401")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(401, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
-        @DisplayName("Throws SystemException when comments endpoint returns 403 Forbidden")
+        @DisplayName("Throws SystemException preserving error details when comments endpoint returns 403 Forbidden")
         void throwsSystemExceptionForForbiddenOnComments() {
             final String postId = "1";
             stubPostByIdResponse(postId, 200, """
@@ -386,7 +412,12 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getPostWithComments(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("403")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(403, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
@@ -558,7 +589,7 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException when upstream responds with 400 Bad Request")
+        @DisplayName("Throws SystemException preserving error details when upstream responds with 400 Bad Request")
         void throwsSystemExceptionForBadRequest() {
             final String postId = "invalid";
             stubPostCommentsResponse(postId, 400, "Bad Request");
@@ -566,11 +597,16 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("400")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(400, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
-        @DisplayName("Throws SystemException when upstream responds with 401 Unauthorized")
+        @DisplayName("Throws SystemException preserving error details when upstream responds with 401 Unauthorized")
         void throwsSystemExceptionForUnauthorized() {
             final String postId = "1";
             stubPostCommentsResponse(postId, 401, "Unauthorized");
@@ -578,11 +614,16 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("401")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(401, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test
-        @DisplayName("Throws SystemException when upstream responds with 403 Forbidden")
+        @DisplayName("Throws SystemException preserving error details when upstream responds with 403 Forbidden")
         void throwsSystemExceptionForForbidden() {
             final String postId = "1";
             stubPostCommentsResponse(postId, 403, "Forbidden");
@@ -590,7 +631,12 @@ class AuditionIntegrationClientTest {
             SystemException exception = assertThrows(SystemException.class,
                 () -> auditionIntegrationClient.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertAll(
+                () -> assertTrue(exception.getMessage().contains("403")),
+                () -> assertEquals("External API Error", exception.getTitle()),
+                () -> assertEquals(403, exception.getStatusCode()),
+                () -> assertNotNull(exception.getCause())
+            );
         }
 
         @Test

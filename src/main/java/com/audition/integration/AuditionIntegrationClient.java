@@ -51,8 +51,8 @@ public class AuditionIntegrationClient {
                 logger.debug(LOG, "No posts found from external API");
             }
         } catch (final HttpClientErrorException e) {
-            // TODO Handle exceptions appropriately. Feel free to change this function as needed.
-            throw new SystemException("Unknown Error message");
+            throw new SystemException(e.getMessage(), "External API Error",
+                e.getStatusCode().value(), e);
         }
 
         return Arrays.asList(posts);
@@ -67,8 +67,8 @@ public class AuditionIntegrationClient {
                 throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found",
                     404);
             } else {
-                // TODO Find a better way to handle the exception so that the original error message is not lost. Feel free to change this function.
-                throw new SystemException("Unknown Error message");
+                throw new SystemException(e.getMessage(), "External API Error",
+                    e.getStatusCode().value(), e);
             }
         }
     }
@@ -96,7 +96,8 @@ public class AuditionIntegrationClient {
                 throw new SystemException("Cannot find comments for Post with id " + postId,
                     "Resource Not Found", 404);
             } else {
-                throw new SystemException("Unknown Error message");
+                throw new SystemException(e.getMessage(), "External API Error",
+                    e.getStatusCode().value(), e);
             }
         }
     }

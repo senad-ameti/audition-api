@@ -84,14 +84,19 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Wraps HttpClientErrorException into SystemException")
+        @DisplayName("Wraps HttpClientErrorException into SystemException preserving error details")
         void handlesHttpClientError() {
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                "Bad Request");
             when(restTemplate.getForObject(POSTS_URL, AuditionPost[].class))
-                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class, () -> client.getPosts());
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("400"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(400, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
             verify(auditionLogger, never()).debug(any(Logger.class), anyString());
         }
     }
@@ -143,39 +148,54 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException with unknown error message for non-404 client errors")
+        @DisplayName("Throws SystemException preserving error details for non-404 client errors")
         void throwsSystemExceptionForOtherClientErrors() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                "Bad Request");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("400"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(400, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
-        @DisplayName("Throws SystemException for forbidden access error")
+        @DisplayName("Throws SystemException preserving error details for forbidden access error")
         void throwsSystemExceptionForForbiddenError() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
+                "Forbidden");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Forbidden"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("403"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(403, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
-        @DisplayName("Throws SystemException for unauthorized access error")
+        @DisplayName("Throws SystemException preserving error details for unauthorized access error")
         void throwsSystemExceptionForUnauthorizedError() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
+                "Unauthorized");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("401"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(401, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
@@ -287,48 +307,63 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException for bad request error when fetching comments")
+        @DisplayName("Throws SystemException preserving error details for bad request error when fetching comments")
         void throwsSystemExceptionForBadRequestOnComments() {
             final String postId = "1";
             AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                "Bad Request");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("400"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(400, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
-        @DisplayName("Throws SystemException for unauthorized error when fetching post")
+        @DisplayName("Throws SystemException preserving error details for unauthorized error when fetching post")
         void throwsSystemExceptionForUnauthorizedOnPost() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
+                "Unauthorized");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("401"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(401, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
-        @DisplayName("Throws SystemException for forbidden error when fetching comments")
+        @DisplayName("Throws SystemException preserving error details for forbidden error when fetching comments")
         void throwsSystemExceptionForForbiddenOnComments() {
             final String postId = "1";
             AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
+                "Forbidden");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Forbidden"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("403"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(403, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
@@ -436,42 +471,57 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException for bad request error")
+        @DisplayName("Throws SystemException preserving error details for bad request error")
         void throwsSystemExceptionForBadRequest() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                "Bad Request");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("400"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(400, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
-        @DisplayName("Throws SystemException for unauthorized error")
+        @DisplayName("Throws SystemException preserving error details for unauthorized error")
         void throwsSystemExceptionForUnauthorized() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
+                "Unauthorized");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("401"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(401, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
-        @DisplayName("Throws SystemException for forbidden error")
+        @DisplayName("Throws SystemException preserving error details for forbidden error")
         void throwsSystemExceptionForForbidden() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
+                "Forbidden");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Forbidden"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("403"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(403, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
 
         @Test
@@ -512,16 +562,21 @@ class AuditionIntegrationClientTest {
         }
 
         @Test
-        @DisplayName("Throws SystemException for internal server error")
+        @DisplayName("Throws SystemException preserving error details for internal server error")
         void throwsSystemExceptionForServerError() {
             final String postId = "1";
+            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Server Error");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
-                .thenThrow(new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Server Error"));
+                .thenThrow(originalException);
 
             SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
-            assertEquals("Unknown Error message", exception.getMessage());
+            assertTrue(exception.getMessage().contains("500"));
+            assertEquals("External API Error", exception.getTitle());
+            assertEquals(500, exception.getStatusCode());
+            assertEquals(originalException, exception.getCause());
         }
     }
 
