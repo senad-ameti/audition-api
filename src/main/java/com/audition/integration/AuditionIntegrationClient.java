@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -40,6 +41,7 @@ public class AuditionIntegrationClient {
         this.postCommentsUrl = postCommentsUrl;
     }
 
+    @Cacheable(value = "posts", unless = "#result == null || #result.isEmpty()")
     public List<AuditionPost> getPosts() {
         AuditionPost[] posts;
         try {
@@ -56,6 +58,7 @@ public class AuditionIntegrationClient {
         return Arrays.asList(posts);
     }
 
+    @Cacheable(value = "postsById", key = "#id", unless = "#result == null")
     public AuditionPost getPostById(final String id) {
         try {
             return restTemplate.getForObject(postsByIdUrl, AuditionPost.class, id);
@@ -70,8 +73,7 @@ public class AuditionIntegrationClient {
         }
     }
 
-    // TODO Write a method GET comments for a post from https://jsonplaceholder.typicode.com/posts/{postId}/comments - the comments must be returned as part of the post.
-
+    @Cacheable(value = "postWithComments", key = "#postId", unless = "#result == null")
     public AuditionPost getPostWithComments(final String postId) {
         AuditionPost post = getPostById(postId);
         List<Comment> comments = getCommentsForPost(postId);
@@ -79,6 +81,7 @@ public class AuditionIntegrationClient {
         return post;
     }
 
+    @Cacheable(value = "comments", key = "#postId", unless = "#result == null || #result.isEmpty()")
     public List<Comment> getCommentsForPost(final String postId) {
         try {
             Comment[] comments = Optional.ofNullable(
@@ -97,7 +100,4 @@ public class AuditionIntegrationClient {
             }
         }
     }
-
-    // TODO write a method. GET comments for a particular Post from https://jsonplaceholder.typicode.com/comments?postId={postId}.
-    // The comments are a separate list that needs to be returned to the API consumers. Hint: this is not part of the AuditionPost pojo.
 }

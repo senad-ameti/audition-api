@@ -40,6 +40,8 @@ dependencies {
     // TODO Clean up unused dependencies. Add comments on consideration on any improvements you made.
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-cache"
+    implementation "com.github.ben-manes.caffeine:caffeine"
     implementation "org.springframework.cloud:spring-cloud-starter-config"
     implementation "io.micrometer:micrometer-tracing-bridge-brave"
     implementation "io.micrometer:micrometer-tracing"

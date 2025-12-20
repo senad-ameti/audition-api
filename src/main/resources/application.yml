@@ -13,6 +13,10 @@ spring:
   sleuth:
     sampler:
       probability: 1.0
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=15m
 server:
   max-http-request-header-size: 16KB
 management:
@@ -22,7 +26,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*' #TODO enable only info and health for security purposes. Consider that we may want to still access other actuator endpoints securely.
+        include: 'health,info' #TODO enable only info and health for security purposes. Consider that we may want to still access other actuator endpoints securely.
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
