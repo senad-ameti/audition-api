@@ -23,14 +23,17 @@ public class AuditionIntegrationClient {
     private final RestTemplate restTemplate;
     private final AuditionLogger logger;
     private final String postsUrl;
+    private final String postsByIdUrl;
 
     public AuditionIntegrationClient(
         @Autowired RestTemplate restTemplate,
         @Autowired AuditionLogger logger,
-        @Value("${audition.integration.posts-url}") String postsUrl) {
+        @Value("${audition.integration.posts-url}") String postsUrl,
+        @Value("${audition.integration.posts-by-id-url}") String postsByIdUrl) {
         this.restTemplate = restTemplate;
         this.logger = logger;
         this.postsUrl = postsUrl;
+        this.postsByIdUrl = postsByIdUrl;
     }
 
     public List<AuditionPost> getPosts() {
@@ -50,9 +53,8 @@ public class AuditionIntegrationClient {
     }
 
     public AuditionPost getPostById(final String id) {
-        // TODO get post by post ID call from https://jsonplaceholder.typicode.com/posts/
         try {
-            return new AuditionPost();
+            return restTemplate.getForObject(postsByIdUrl, AuditionPost.class, id);
         } catch (final HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found",

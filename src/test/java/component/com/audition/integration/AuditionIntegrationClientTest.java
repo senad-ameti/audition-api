@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,6 +21,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -39,6 +41,7 @@ import org.wiremock.spring.InjectWireMock;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @EnableWireMock
+@DisplayName("AuditionIntegrationClient Component Tests")
 class AuditionIntegrationClientTest {
 
     @InjectWireMock
@@ -55,49 +58,205 @@ class AuditionIntegrationClientTest {
         wireMockServer.resetAll();
     }
 
+    @Nested
+    @DisplayName("getPosts")
+    class GetPostsTests {
 
-    @Test
-    @DisplayName("Returns posts when upstream responds with content")
-    void getPostsReturnsRemotePayload() {
-        stubPostsResponse(200, """
-            [
-              {"userId": 1, "id": 10, "title": "alpha", "body": "lorem"},
-              {"userId": 2, "id": 20, "title": "beta", "body": "ipsum"}
-            ]
-            """);
+        @Test
+        @DisplayName("Returns posts when upstream responds with content")
+        void returnsRemotePayload() {
+            stubPostsResponse(200, """
+                [
+                  {"userId": 1, "id": 10, "title": "alpha", "body": "lorem"},
+                  {"userId": 2, "id": 20, "title": "beta", "body": "ipsum"}
+                ]
+                """);
 
-        final List<AuditionPost> posts = auditionIntegrationClient.getPosts();
+            final List<AuditionPost> posts = auditionIntegrationClient.getPosts();
 
-        assertAll(
-            () -> assertEquals(2, posts.size(), "Expected the remote payload to be mapped"),
-            () -> assertEquals(10, posts.get(0).getId()),
-            () -> assertEquals("alpha", posts.get(0).getTitle()),
-            () -> assertEquals(20, posts.get(1).getId()),
-            () -> assertEquals("beta", posts.get(1).getTitle())
-        );
+            assertAll(
+                () -> assertEquals(2, posts.size(), "Expected the remote payload to be mapped"),
+                () -> assertEquals(10, posts.get(0).getId()),
+                () -> assertEquals("alpha", posts.get(0).getTitle()),
+                () -> assertEquals(20, posts.get(1).getId()),
+                () -> assertEquals("beta", posts.get(1).getTitle())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns an empty list and logs when upstream has no posts")
+        void returnsEmptyPayload() {
+            stubPostsResponse(200, "[]");
+
+            final List<AuditionPost> posts = auditionIntegrationClient.getPosts();
+
+            assertTrue(posts.isEmpty(), "Expected empty response to yield empty list");
+            verify(auditionLogger).debug(any(), eq("No posts found from external API"));
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with a client error")
+        void throwsWhenRemoteClientErrors() {
+            stubPostsResponse(404, "");
+
+            assertThrows(SystemException.class, () -> auditionIntegrationClient.getPosts());
+        }
     }
 
-    @Test
-    @DisplayName("Returns an empty list and logs when upstream has no posts")
-    void getPostsReturnsEmptyPayload() {
-        stubPostsResponse(200, "[]");
+    @Nested
+    @DisplayName("getPostById")
+    class GetPostByIdTests {
 
-        final List<AuditionPost> posts = auditionIntegrationClient.getPosts();
+        @Test
+        @DisplayName("Returns post when upstream responds with valid post data for given id")
+        void returnsRemotePayload() {
+            final String postId = "1";
+            stubPostByIdResponse(postId, 200, """
+                {"userId": 1, "id": 1, "title": "Test Title", "body": "Test Body"}
+                """);
 
-        assertTrue(posts.isEmpty(), "Expected empty response to yield empty list");
-        verify(auditionLogger).debug(any(), eq("No posts found from external API"));
-    }
+            final AuditionPost post = auditionIntegrationClient.getPostById(postId);
 
-    @Test
-    @DisplayName("Throws SystemException when upstream responds with a client error")
-    void getPostsThrowsWhenRemoteClientErrors() {
-        stubPostsResponse(404, "");
+            assertAll(
+                () -> assertEquals(1, post.getId()),
+                () -> assertEquals(1, post.getUserId()),
+                () -> assertEquals("Test Title", post.getTitle()),
+                () -> assertEquals("Test Body", post.getBody())
+            );
+        }
 
-        assertThrows(SystemException.class, () -> auditionIntegrationClient.getPosts());
+        @Test
+        @DisplayName("Returns post with all fields correctly mapped when upstream responds with complete data")
+        void mapsAllFieldsCorrectly() {
+            final String postId = "42";
+            stubPostByIdResponse(postId, 200, """
+                {"userId": 5, "id": 42, "title": "sunt aut facere repellat provident", "body": "quia et suscipit\\nsuscipit recusandae"}
+                """);
+
+            final AuditionPost post = auditionIntegrationClient.getPostById(postId);
+
+            assertAll(
+                () -> assertEquals(42, post.getId()),
+                () -> assertEquals(5, post.getUserId()),
+                () -> assertEquals("sunt aut facere repellat provident", post.getTitle()),
+                () -> assertEquals("quia et suscipit\nsuscipit recusandae", post.getBody())
+            );
+        }
+
+        @Test
+        @DisplayName("Throws SystemException with 404 status when post is not found")
+        void throwsNotFoundExceptionWhenPostNotFound() {
+            final String postId = "9999";
+            stubPostByIdResponse(postId, 404, "{}");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getPostById(postId));
+
+            assertAll(
+                () -> assertEquals("Cannot find a Post with id " + postId, exception.getMessage()),
+                () -> assertEquals("Resource Not Found", exception.getTitle()),
+                () -> assertEquals(404, exception.getStatusCode())
+            );
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with 400 Bad Request")
+        void throwsSystemExceptionForBadRequest() {
+            final String postId = "invalid";
+            stubPostByIdResponse(postId, 400, "Bad Request");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getPostById(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with 401 Unauthorized")
+        void throwsSystemExceptionForUnauthorized() {
+            final String postId = "1";
+            stubPostByIdResponse(postId, 401, "Unauthorized");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getPostById(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException when upstream responds with 403 Forbidden")
+        void throwsSystemExceptionForForbidden() {
+            final String postId = "1";
+            stubPostByIdResponse(postId, 403, "Forbidden");
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> auditionIntegrationClient.getPostById(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Returns post with empty body when upstream responds with empty body field")
+        void handlesEmptyBody() {
+            final String postId = "10";
+            stubPostByIdResponse(postId, 200, """
+                {"userId": 1, "id": 10, "title": "Title Only", "body": ""}
+                """);
+
+            final AuditionPost post = auditionIntegrationClient.getPostById(postId);
+
+            assertAll(
+                () -> assertEquals(10, post.getId()),
+                () -> assertEquals("Title Only", post.getTitle()),
+                () -> assertEquals("", post.getBody())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns post with null title when upstream responds with null title field")
+        void handlesNullTitle() {
+            final String postId = "15";
+            stubPostByIdResponse(postId, 200, """
+                {"userId": 1, "id": 15, "title": null, "body": "Body content"}
+                """);
+
+            final AuditionPost post = auditionIntegrationClient.getPostById(postId);
+
+            assertAll(
+                () -> assertEquals(15, post.getId()),
+                () -> assertNull(post.getTitle()),
+                () -> assertEquals("Body content", post.getBody())
+            );
+        }
+
+        @Test
+        @DisplayName("Returns post with special characters in title and body")
+        void handlesSpecialCharacters() {
+            final String postId = "20";
+            stubPostByIdResponse(postId, 200, """
+                {"userId": 2, "id": 20, "title": "Special <chars> & 'quotes'", "body": "Body with unicode: éàü"}
+                """);
+
+            final AuditionPost post = auditionIntegrationClient.getPostById(postId);
+
+            assertAll(
+                () -> assertEquals(20, post.getId()),
+                () -> assertEquals("Special <chars> & 'quotes'", post.getTitle()),
+                () -> assertEquals("Body with unicode: éàü", post.getBody())
+            );
+        }
     }
 
     private void stubPostsResponse(final int status, final String responseBody) {
         wireMockServer.stubFor(get(urlEqualTo("/posts"))
+            .willReturn(aResponse()
+                .withStatus(status)
+                .withHeader("Content-Type", "application/json")
+                .withBody(responseBody)));
+    }
+
+    private void stubPostByIdResponse(final String postId, final int status, final String responseBody) {
+        wireMockServer.stubFor(get(urlEqualTo("/posts/" + postId))
             .willReturn(aResponse()
                 .withStatus(status)
                 .withHeader("Content-Type", "application/json")

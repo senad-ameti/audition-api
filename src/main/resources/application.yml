@@ -30,3 +30,4 @@ logging:
 audition:
   integration:
     posts-url: https://jsonplaceholder.typicode.com/posts
+    posts-by-id-url: https://jsonplaceholder.typicode.com/posts/{id}

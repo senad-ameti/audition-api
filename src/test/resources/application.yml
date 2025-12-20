@@ -16,3 +16,4 @@ application:
 audition:
   integration:
     posts-url: http://localhost:${wiremock.server.port}/posts
+    posts-by-id-url: http://localhost:${wiremock.server.port}/posts/{id}
