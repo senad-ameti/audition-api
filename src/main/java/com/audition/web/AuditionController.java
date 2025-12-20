@@ -23,13 +23,16 @@ public class AuditionController {
 
     @RequestMapping(value = "/posts", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody List<AuditionPost> getPosts(
-        @RequestParam(required = false) final Integer userId,
-        @RequestParam(required = false) final Integer id) {
-        return auditionService.getPosts(userId, id);
+        @RequestParam(required = false) @PositiveInteger(fieldName = "User ID", optional = true) final String userId,
+        @RequestParam(required = false) @PositiveInteger(fieldName = "ID", optional = true) final String id) {
+        return auditionService.getPosts(
+            userId != null ? Integer.parseInt(userId) : null,
+            id != null ? Integer.parseInt(id) : null);
     }
 
     @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody AuditionPost getPosts(@PathVariable("id") @PositiveInteger final String postId) {
+    public @ResponseBody AuditionPost getPosts(
+        @PathVariable("id") @PositiveInteger(fieldName = "Post ID") final String postId) {
         return auditionService.getPostById(postId);
     }
 

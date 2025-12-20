@@ -39,6 +39,8 @@ class PositiveIntegerValidatorTest {
     @BeforeEach
     void setUp() {
         validator = new PositiveIntegerValidator();
+        when(constraintAnnotation.fieldName()).thenReturn("Post ID");
+        when(constraintAnnotation.optional()).thenReturn(false);
         validator.initialize(constraintAnnotation);
     }
 
@@ -173,18 +175,69 @@ class PositiveIntegerValidatorTest {
         @DisplayName("should initialize without errors")
         void shouldInitializeWithoutErrors() {
             PositiveIntegerValidator newValidator = new PositiveIntegerValidator();
+            when(constraintAnnotation.fieldName()).thenReturn("Test Field");
+            when(constraintAnnotation.optional()).thenReturn(false);
             newValidator.initialize(constraintAnnotation);
             // No exception should be thrown
             assertTrue(true);
         }
 
         @Test
-        @DisplayName("should initialize with null annotation without errors")
-        void shouldInitializeWithNullAnnotationWithoutErrors() {
-            PositiveIntegerValidator newValidator = new PositiveIntegerValidator();
-            newValidator.initialize(null);
-            // No exception should be thrown
-            assertTrue(true);
+        @DisplayName("should use custom field name in error messages")
+        void shouldUseCustomFieldNameInErrorMessages() {
+            PositiveIntegerValidator customValidator = new PositiveIntegerValidator();
+            when(constraintAnnotation.fieldName()).thenReturn("Custom Field");
+            when(constraintAnnotation.optional()).thenReturn(false);
+            customValidator.initialize(constraintAnnotation);
+            when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
+
+            boolean result = customValidator.isValid("0", context);
+
+            assertFalse(result);
+            verify(context).buildConstraintViolationWithTemplate("Custom Field must be a positive integer");
+        }
+
+        @Test
+        @DisplayName("should return true for null when optional is true")
+        void shouldReturnTrueForNullWhenOptional() {
+            PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
+            when(constraintAnnotation.fieldName()).thenReturn("Optional Field");
+            when(constraintAnnotation.optional()).thenReturn(true);
+            optionalValidator.initialize(constraintAnnotation);
+
+            boolean result = optionalValidator.isValid(null, context);
+
+            assertTrue(result);
+            verify(context, never()).disableDefaultConstraintViolation();
+        }
+
+        @Test
+        @DisplayName("should return true for blank when optional is true")
+        void shouldReturnTrueForBlankWhenOptional() {
+            PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
+            when(constraintAnnotation.fieldName()).thenReturn("Optional Field");
+            when(constraintAnnotation.optional()).thenReturn(true);
+            optionalValidator.initialize(constraintAnnotation);
+
+            boolean result = optionalValidator.isValid("  ", context);
+
+            assertTrue(result);
+            verify(context, never()).disableDefaultConstraintViolation();
+        }
+
+        @Test
+        @DisplayName("should still validate positive integer when optional is true and value provided")
+        void shouldValidatePositiveIntegerWhenOptionalAndValueProvided() {
+            PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
+            when(constraintAnnotation.fieldName()).thenReturn("Optional Field");
+            when(constraintAnnotation.optional()).thenReturn(true);
+            optionalValidator.initialize(constraintAnnotation);
+            when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
+
+            boolean result = optionalValidator.isValid("-1", context);
+
+            assertFalse(result);
+            verify(context).buildConstraintViolationWithTemplate("Optional Field must be a positive integer");
         }
     }
 }

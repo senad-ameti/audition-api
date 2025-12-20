@@ -116,6 +116,22 @@ class PositiveIntegerTest {
             assertInstanceOf(Class[].class, defaultValue, "payload should return Class array");
             assertEquals(0, ((Class<?>[]) defaultValue).length, "payload should be empty by default");
         }
+
+        @Test
+        @DisplayName("should have default fieldName of 'Value'")
+        void shouldHaveDefaultFieldName() throws NoSuchMethodException {
+            Method fieldNameMethod = PositiveInteger.class.getMethod("fieldName");
+            Object defaultValue = fieldNameMethod.getDefaultValue();
+            assertEquals("Value", defaultValue, "Default fieldName should be 'Value'");
+        }
+
+        @Test
+        @DisplayName("should have default optional value of false")
+        void shouldHaveDefaultOptionalFalse() throws NoSuchMethodException {
+            Method optionalMethod = PositiveInteger.class.getMethod("optional");
+            Object defaultValue = optionalMethod.getDefaultValue();
+            assertEquals(false, defaultValue, "Default optional should be false");
+        }
     }
 
     @Nested
@@ -161,6 +177,14 @@ class PositiveIntegerTest {
         @PositiveInteger(message = "Custom error message")
         private String fieldWithCustomMessage;
 
+        @SuppressWarnings("unused")
+        @PositiveInteger(fieldName = "User ID")
+        private String fieldWithCustomFieldName;
+
+        @SuppressWarnings("unused")
+        @PositiveInteger(optional = true)
+        private String fieldWithOptionalTrue;
+
         @Test
         @DisplayName("should support custom message")
         void shouldSupportCustomMessage() throws NoSuchFieldException {
@@ -168,6 +192,24 @@ class PositiveIntegerTest {
                 .getDeclaredField("fieldWithCustomMessage")
                 .getAnnotation(PositiveInteger.class);
             assertEquals("Custom error message", annotation.message());
+        }
+
+        @Test
+        @DisplayName("should support custom fieldName")
+        void shouldSupportCustomFieldName() throws NoSuchFieldException {
+            PositiveInteger annotation = CustomMessageTests.class
+                .getDeclaredField("fieldWithCustomFieldName")
+                .getAnnotation(PositiveInteger.class);
+            assertEquals("User ID", annotation.fieldName());
+        }
+
+        @Test
+        @DisplayName("should support optional=true")
+        void shouldSupportOptionalTrue() throws NoSuchFieldException {
+            PositiveInteger annotation = CustomMessageTests.class
+                .getDeclaredField("fieldWithOptionalTrue")
+                .getAnnotation(PositiveInteger.class);
+            assertEquals(true, annotation.optional());
         }
     }
 }

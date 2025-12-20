@@ -100,7 +100,7 @@ class AuditionControllerTest {
 
             when(auditionService.getPosts(eq(5), eq(null))).thenReturn(Collections.singletonList(post));
 
-            List<AuditionPost> result = auditionController.getPosts(5, null);
+            List<AuditionPost> result = auditionController.getPosts("5", null);
 
             assertEquals(1, result.size());
             assertEquals(5, result.get(0).getUserId());
@@ -118,7 +118,7 @@ class AuditionControllerTest {
 
             when(auditionService.getPosts(eq(null), eq(42))).thenReturn(Collections.singletonList(post));
 
-            List<AuditionPost> result = auditionController.getPosts(null, 42);
+            List<AuditionPost> result = auditionController.getPosts(null, "42");
 
             assertEquals(1, result.size());
             assertEquals(42, result.get(0).getId());
@@ -136,7 +136,7 @@ class AuditionControllerTest {
 
             when(auditionService.getPosts(eq(3), eq(10))).thenReturn(Collections.singletonList(post));
 
-            List<AuditionPost> result = auditionController.getPosts(3, 10);
+            List<AuditionPost> result = auditionController.getPosts("3", "10");
 
             assertEquals(1, result.size());
             assertEquals(3, result.get(0).getUserId());
@@ -149,7 +149,7 @@ class AuditionControllerTest {
         void getPostsReturnsEmptyWhenFiltersMatchNothing() {
             when(auditionService.getPosts(eq(999), eq(888))).thenReturn(Collections.emptyList());
 
-            List<AuditionPost> result = auditionController.getPosts(999, 888);
+            List<AuditionPost> result = auditionController.getPosts("999", "888");
 
             assertEquals(0, result.size());
             verify(auditionService).getPosts(eq(999), eq(888));

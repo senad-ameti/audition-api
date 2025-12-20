@@ -16,6 +16,10 @@ public @interface PositiveInteger {
 
     String message() default "must be a positive integer";
 
+    String fieldName() default "Value";
+
+    boolean optional() default false;
+
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};

@@ -172,6 +172,60 @@ class AuditionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
         }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when userId is not a valid integer")
+        void returnsBadRequestWhenUserIdIsNotInteger() throws Exception {
+            mockMvc.perform(get("/posts?userId=abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("User ID must be a valid integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when userId is zero")
+        void returnsBadRequestWhenUserIdIsZero() throws Exception {
+            mockMvc.perform(get("/posts?userId=0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("User ID must be a positive integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when userId is negative")
+        void returnsBadRequestWhenUserIdIsNegative() throws Exception {
+            mockMvc.perform(get("/posts?userId=-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("User ID must be a positive integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when id is not a valid integer")
+        void returnsBadRequestWhenIdIsNotInteger() throws Exception {
+            mockMvc.perform(get("/posts?id=abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("ID must be a valid integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when id is zero")
+        void returnsBadRequestWhenIdIsZero() throws Exception {
+            mockMvc.perform(get("/posts?id=0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("ID must be a positive integer")));
+        }
+
+        @Test
+        @DisplayName("returns 400 Bad Request when id is negative")
+        void returnsBadRequestWhenIdIsNegative() throws Exception {
+            mockMvc.perform(get("/posts?id=-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("Invalid Request")))
+                .andExpect(jsonPath("$.detail", is("ID must be a positive integer")));
+        }
     }
 
     @Nested
