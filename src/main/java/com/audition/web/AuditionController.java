@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,13 +18,11 @@ public class AuditionController {
     @Autowired
     private transient AuditionService auditionService;
 
-    // TODO Add a query param that allows data filtering. The intent of the filter is at developers discretion.
     @RequestMapping(value = "/posts", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody List<AuditionPost> getPosts() {
-
-        // TODO Add logic that filters response data based on the query param
-
-        return auditionService.getPosts();
+    public @ResponseBody List<AuditionPost> getPosts(
+        @RequestParam(required = false) final Integer userId,
+        @RequestParam(required = false) final Integer id) {
+        return auditionService.getPosts(userId, id);
     }
 
     @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)

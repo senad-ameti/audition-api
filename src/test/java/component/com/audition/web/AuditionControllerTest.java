@@ -52,9 +52,9 @@ class AuditionControllerTest {
                 .willReturn(WireMock.aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
-                    .withBody("[{" +
-                        "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"}," +
-                        "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"}]")));
+                    .withBody("[{"
+                        + "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"},"
+                        + "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"}]")));
 
             mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -75,6 +75,100 @@ class AuditionControllerTest {
                     .withBody("[]")));
 
             mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("filters posts by userId query parameter")
+        void filtersPostsByUserId() throws Exception {
+            WireMock.stubFor(WireMock.get(WireMock.urlEqualTo("/posts"))
+                .willReturn(WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("[{"
+                        + "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"},"
+                        + "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"},"
+                        + "{\"userId\":1,\"id\":30,\"title\":\"gamma\",\"body\":\"dolor\"}]")));
+
+            mockMvc.perform(get("/posts?userId=1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].userId", is(1)))
+                .andExpect(jsonPath("$[0].id", is(10)))
+                .andExpect(jsonPath("$[1].userId", is(1)))
+                .andExpect(jsonPath("$[1].id", is(30)));
+        }
+
+        @Test
+        @DisplayName("filters posts by id query parameter")
+        void filtersPostsById() throws Exception {
+            WireMock.stubFor(WireMock.get(WireMock.urlEqualTo("/posts"))
+                .willReturn(WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("[{"
+                        + "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"},"
+                        + "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"},"
+                        + "{\"userId\":3,\"id\":30,\"title\":\"gamma\",\"body\":\"dolor\"}]")));
+
+            mockMvc.perform(get("/posts?id=20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(20)))
+                .andExpect(jsonPath("$[0].userId", is(2)))
+                .andExpect(jsonPath("$[0].title", is("beta")));
+        }
+
+        @Test
+        @DisplayName("filters posts by both userId and id with AND logic")
+        void filtersPostsByUserIdAndId() throws Exception {
+            WireMock.stubFor(WireMock.get(WireMock.urlEqualTo("/posts"))
+                .willReturn(WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("[{"
+                        + "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"},"
+                        + "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"},"
+                        + "{\"userId\":1,\"id\":30,\"title\":\"gamma\",\"body\":\"dolor\"}]")));
+
+            mockMvc.perform(get("/posts?userId=1&id=10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].userId", is(1)))
+                .andExpect(jsonPath("$[0].id", is(10)))
+                .andExpect(jsonPath("$[0].title", is("alpha")));
+        }
+
+        @Test
+        @DisplayName("returns empty array when filters don't match any posts")
+        void returnsEmptyWhenFiltersDoNotMatch() throws Exception {
+            WireMock.stubFor(WireMock.get(WireMock.urlEqualTo("/posts"))
+                .willReturn(WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("[{"
+                        + "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"},"
+                        + "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"}]")));
+
+            mockMvc.perform(get("/posts?userId=999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("returns empty array when both userId and id filters don't match together")
+        void returnsEmptyWhenBothFiltersDoNotMatchTogether() throws Exception {
+            WireMock.stubFor(WireMock.get(WireMock.urlEqualTo("/posts"))
+                .willReturn(WireMock.aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("[{"
+                        + "\"userId\":1,\"id\":10,\"title\":\"alpha\",\"body\":\"lorem\"},"
+                        + "{\"userId\":2,\"id\":20,\"title\":\"beta\",\"body\":\"ipsum\"}]")));
+
+            // userId=1 exists but not with id=20 (id=20 belongs to userId=2)
+            mockMvc.perform(get("/posts?userId=1&id=20"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
         }
