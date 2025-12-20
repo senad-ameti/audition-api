@@ -15,6 +15,7 @@ import com.audition.common.exception.SystemException;
 import com.audition.common.logging.AuditionLogger;
 import com.audition.integration.AuditionIntegrationClient;
 import com.audition.model.AuditionPost;
+import com.audition.model.Comment;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +35,7 @@ class AuditionIntegrationClientTest {
 
     private static final String POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
     private static final String POSTS_BY_ID_URL = "https://jsonplaceholder.typicode.com/posts/{id}";
+    private static final String POST_COMMENTS_URL = "https://jsonplaceholder.typicode.com/posts/{postId}/comments";
 
     @Mock
     private RestTemplate restTemplate;
@@ -45,7 +47,8 @@ class AuditionIntegrationClientTest {
 
     @BeforeEach
     void setUp() {
-        client = new AuditionIntegrationClient(restTemplate, auditionLogger, POSTS_URL, POSTS_BY_ID_URL);
+        client = new AuditionIntegrationClient(restTemplate, auditionLogger, POSTS_URL, POSTS_BY_ID_URL,
+            POST_COMMENTS_URL);
     }
 
     @Nested
@@ -192,6 +195,184 @@ class AuditionIntegrationClientTest {
         }
     }
 
+    @Nested
+    @DisplayName("getPostWithComments")
+    class GetPostWithCommentsTests {
+
+        @Test
+        @DisplayName("Returns post with comments when both post and comments exist")
+        void returnsPostWithComments() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            Comment comment1 = buildComment(1, 1, "comment-name-1", "email1@test.com", "comment-body-1");
+            Comment comment2 = buildComment(1, 2, "comment-name-2", "email2@test.com", "comment-body-2");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[]{comment1, comment2});
+
+            AuditionPost result = client.getPostWithComments(postId);
+
+            assertEquals(1, result.getId());
+            assertEquals("test-title", result.getTitle());
+            assertEquals(2, result.getComments().size());
+            assertEquals("comment-name-1", result.getComments().get(0).getName());
+            assertEquals("email2@test.com", result.getComments().get(1).getEmail());
+        }
+
+        @Test
+        @DisplayName("Returns post with empty comments list when no comments exist")
+        void returnsPostWithEmptyComments() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[0]);
+
+            AuditionPost result = client.getPostWithComments(postId);
+
+            assertEquals(1, result.getId());
+            assertTrue(result.getComments().isEmpty());
+            verify(auditionLogger).debug(any(Logger.class), eq("No comments found for post with id " + postId));
+        }
+
+        @Test
+        @DisplayName("Returns post with empty comments list when comments response is null")
+        void returnsPostWithEmptyCommentsWhenNull() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId)).thenReturn(null);
+
+            AuditionPost result = client.getPostWithComments(postId);
+
+            assertEquals(1, result.getId());
+            assertTrue(result.getComments().isEmpty());
+            verify(auditionLogger).debug(any(Logger.class), eq("No comments found for post with id " + postId));
+        }
+
+        @Test
+        @DisplayName("Throws SystemException with 404 status when post is not found")
+        void throwsNotFoundExceptionWhenPostNotFound() {
+            final String postId = "999";
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getPostWithComments(postId));
+
+            assertEquals("Cannot find a Post with id " + postId, exception.getMessage());
+            assertEquals("Resource Not Found", exception.getTitle());
+            assertEquals(404, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException with 404 status when comments endpoint returns not found")
+        void throwsNotFoundExceptionWhenCommentsNotFound() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getPostWithComments(postId));
+
+            assertEquals("Cannot find comments for Post with id " + postId, exception.getMessage());
+            assertEquals("Resource Not Found", exception.getTitle());
+            assertEquals(404, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for bad request error when fetching comments")
+        void throwsSystemExceptionForBadRequestOnComments() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getPostWithComments(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for unauthorized error when fetching post")
+        void throwsSystemExceptionForUnauthorizedOnPost() {
+            final String postId = "1";
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getPostWithComments(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Throws SystemException for forbidden error when fetching comments")
+        void throwsSystemExceptionForForbiddenOnComments() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN, "Forbidden"));
+
+            SystemException exception = assertThrows(SystemException.class,
+                () -> client.getPostWithComments(postId));
+
+            assertEquals("Unknown Error message", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Returns post with comments containing special characters")
+        void handlesCommentsWithSpecialCharacters() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            Comment comment = buildComment(1, 1, "Special <name> & 'quotes'",
+                "test@émail.com", "Body with unicode: éàü\nand newlines");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[]{comment});
+
+            AuditionPost result = client.getPostWithComments(postId);
+
+            assertEquals(1, result.getComments().size());
+            assertEquals("Special <name> & 'quotes'", result.getComments().get(0).getName());
+            assertEquals("test@émail.com", result.getComments().get(0).getEmail());
+            assertEquals("Body with unicode: éàü\nand newlines", result.getComments().get(0).getBody());
+        }
+
+        @Test
+        @DisplayName("Returns post with multiple comments correctly ordered")
+        void handlesMultipleCommentsInOrder() {
+            final String postId = "1";
+            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            Comment comment1 = buildComment(1, 1, "First", "first@test.com", "First body");
+            Comment comment2 = buildComment(1, 2, "Second", "second@test.com", "Second body");
+            Comment comment3 = buildComment(1, 3, "Third", "third@test.com", "Third body");
+
+            when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
+            when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
+                .thenReturn(new Comment[]{comment1, comment2, comment3});
+
+            AuditionPost result = client.getPostWithComments(postId);
+
+            assertEquals(3, result.getComments().size());
+            assertEquals(1, result.getComments().get(0).getId());
+            assertEquals(2, result.getComments().get(1).getId());
+            assertEquals(3, result.getComments().get(2).getId());
+        }
+    }
+
     private AuditionPost buildPost(final int id, final int userId, final String title, final String body) {
         AuditionPost post = new AuditionPost();
         post.setId(id);
@@ -199,6 +380,17 @@ class AuditionIntegrationClientTest {
         post.setTitle(title);
         post.setBody(body);
         return post;
+    }
+
+    private Comment buildComment(final int postId, final int id, final String name,
+        final String email, final String body) {
+        Comment comment = new Comment();
+        comment.setPostId(postId);
+        comment.setId(id);
+        comment.setName(name);
+        comment.setEmail(email);
+        comment.setBody(body);
+        return comment;
     }
 }
 
