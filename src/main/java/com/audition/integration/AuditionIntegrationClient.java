@@ -17,6 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * Client for integrating with an external API to retrieve posts and comments. This component uses Spring's RestTemplate
+ * to make HTTP requests and includes caching for performance optimization.
+ */
 @Component
 public class AuditionIntegrationClient {
 
@@ -28,6 +32,15 @@ public class AuditionIntegrationClient {
     private final String postsByIdUrl;
     private final String postCommentsUrl;
 
+    /**
+     * Constructs an AuditionIntegrationClient with the required dependencies.
+     *
+     * @param restTemplate    the RestTemplate for making HTTP requests
+     * @param logger          the custom logger for auditing
+     * @param postsUrl        the URL for fetching all posts
+     * @param postsByIdUrl    the URL template for fetching a post by ID
+     * @param postCommentsUrl the URL template for fetching comments for a post
+     */
     public AuditionIntegrationClient(
         @Autowired RestTemplate restTemplate,
         @Autowired AuditionLogger logger,
@@ -41,6 +54,12 @@ public class AuditionIntegrationClient {
         this.postCommentsUrl = postCommentsUrl;
     }
 
+    /**
+     * Retrieves a list of all posts from the external API. Results are cached to improve performance.
+     *
+     * @return a list of AuditionPost objects, or an empty list if none found
+     * @throws SystemException if there is an error communicating with the external API
+     */
     @Cacheable(value = "posts", unless = "#result == null || #result.isEmpty()")
     public List<AuditionPost> getPosts() {
         AuditionPost[] posts;
@@ -58,6 +77,13 @@ public class AuditionIntegrationClient {
         return Arrays.asList(posts);
     }
 
+    /**
+     * Retrieves a specific post by its ID from the external API. Results are cached to improve performance.
+     *
+     * @param id the ID of the post to retrieve
+     * @return the AuditionPost object corresponding to the given ID
+     * @throws SystemException if the post is not found or if there is an error communicating with the external API
+     */
     @Cacheable(value = "postsById", key = "#id", unless = "#result == null")
     public AuditionPost getPostById(final String id) {
         try {
@@ -73,6 +99,15 @@ public class AuditionIntegrationClient {
         }
     }
 
+    /**
+     * Retrieves a specific post by its ID along with its associated comments from the external API. Results are cached
+     * to improve performance.
+     *
+     * @param postId the ID of the post to retrieve with comments
+     * @return the AuditionPost object with its comments populated
+     * @throws SystemException if the post or comments are not found or if there is an error communicating with the
+     *                         external API
+     */
     @Cacheable(value = "postWithComments", key = "#postId", unless = "#result == null")
     public AuditionPost getPostWithComments(final String postId) {
         AuditionPost post = getPostById(postId);
@@ -81,6 +116,15 @@ public class AuditionIntegrationClient {
         return post;
     }
 
+    /**
+     * Retrieves a list of comments for a specific post from the external API. Results are cached to improve
+     * performance.
+     *
+     * @param postId the ID of the post for which to retrieve comments
+     * @return a list of Comment objects, or an empty list if none found
+     * @throws SystemException if the comments are not found or if there is an error communicating with the external
+     *                         API
+     */
     @Cacheable(value = "comments", key = "#postId", unless = "#result == null || #result.isEmpty()")
     public List<Comment> getCommentsForPost(final String postId) {
         try {
