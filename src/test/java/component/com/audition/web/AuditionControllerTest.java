@@ -61,8 +61,10 @@ class AuditionControllerTest {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id", is(10)))
                 .andExpect(jsonPath("$[0].title", is("alpha")))
+                .andExpect(jsonPath("$[0].comments").doesNotExist())
                 .andExpect(jsonPath("$[1].id", is(20)))
-                .andExpect(jsonPath("$[1].title", is("beta")));
+                .andExpect(jsonPath("$[1].title", is("beta")))
+                .andExpect(jsonPath("$[1].comments").doesNotExist());
         }
 
         @Test
@@ -245,6 +247,21 @@ class AuditionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.title", is("Test Title")));
+        }
+
+        @Test
+        @DisplayName("returns post without comments field when comments are null")
+        void returnsPostWithoutCommentsFieldWhenNull() throws Exception {
+            final String postId = "1";
+            WireMock.stubFor(WireMock.get(WireMock.urlEqualTo("/posts/" + postId))
+                .willReturn(WireMock.aResponse().withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"userId\":1,\"id\":1,\"title\":\"Test Title\",\"body\":\"Test Body\"}")));
+
+            mockMvc.perform(get("/posts/" + postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.comments").doesNotExist());
         }
 
         @Test
