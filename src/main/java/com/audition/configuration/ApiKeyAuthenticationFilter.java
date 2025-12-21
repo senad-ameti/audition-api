@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -23,9 +24,21 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
     private static final String API_KEY_HEADER = "X-API-Key";
     private final SecurityProperties securityProperties;
 
+    /**
+     * Filters incoming requests to apply API key authentication for secured actuator endpoints. Checks the X-API-Key
+     * header and sets the security context if the key is valid. For invalid or missing keys, clears the security
+     * context, resulting in a 401 response.
+     *
+     * @param request     the HTTP servlet request
+     * @param response    the HTTP servlet response
+     * @param filterChain the filter chain to continue processing
+     * @throws ServletException if a servlet error occurs
+     * @throws IOException      if an I/O error occurs
+     */
     @Override
-    protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-        final FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull final HttpServletRequest request,
+        @NonNull final HttpServletResponse response,
+        @NonNull final FilterChain filterChain) throws ServletException, IOException {
 
         final String requestPath = request.getRequestURI();
 
@@ -51,4 +64,3 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-
