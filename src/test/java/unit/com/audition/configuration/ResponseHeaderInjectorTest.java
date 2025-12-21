@@ -164,5 +164,45 @@ class ResponseHeaderInjectorTest {
             verify(filterChain).doFilter(request, response);
         }
     }
+
+    @Nested
+    @DisplayName("When request or response is not HTTP")
+    class WhenNotHttpRequestOrResponse {
+
+        @Test
+        @DisplayName("does not inject headers when request is not HttpServletRequest")
+        void doesNotInjectHeadersForNonHttpRequest() throws Exception {
+            final ResponseHeaderInjector filter = new ResponseHeaderInjector(
+                true, "X-Trace-Id", "X-Span-Id");
+
+            jakarta.servlet.ServletRequest nonHttpRequest = mock(jakarta.servlet.ServletRequest.class);
+            jakarta.servlet.ServletResponse nonHttpResponse = mock(jakarta.servlet.ServletResponse.class);
+
+            filter.doFilter(nonHttpRequest, nonHttpResponse, filterChain);
+
+            verify(response, never()).setHeader(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString());
+
+            // But filter chain should still be called
+            verify(filterChain).doFilter(nonHttpRequest, nonHttpResponse);
+        }
+
+        @Test
+        @DisplayName("does not inject headers when response is not HttpServletResponse")
+        void doesNotInjectHeadersForNonHttpResponse() throws Exception {
+            final ResponseHeaderInjector filter = new ResponseHeaderInjector(
+                true, "X-Trace-Id", "X-Span-Id");
+
+            jakarta.servlet.ServletResponse nonHttpResponse = mock(jakarta.servlet.ServletResponse.class);
+
+            filter.doFilter(request, nonHttpResponse, filterChain);
+
+            verify(response, never()).setHeader(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString());
+
+            // But filter chain should still be called
+            verify(filterChain).doFilter(request, nonHttpResponse);
+        }
+    }
 }
 
