@@ -32,6 +32,7 @@ logging:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
     com.audition.common.logging.RestTemplateLoggingInterceptor: INFO
+    com.audition.configuration.ResponseHeaderInjector: DEBUG
 
 audition:
   logging:

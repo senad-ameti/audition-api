@@ -44,10 +44,6 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "com.github.ben-manes.caffeine:caffeine"
     implementation "org.springframework.cloud:spring-cloud-starter-config"
-    implementation "io.micrometer:micrometer-tracing-bridge-brave"
-    implementation "io.micrometer:micrometer-tracing"
-    implementation "io.micrometer:micrometer-registry-prometheus"
-    implementation "io.micrometer:context-propagation"
     implementation "org.apache.commons:commons-lang3:3.20.0"
 
     developmentOnly "org.springframework.boot:spring-boot-devtools"

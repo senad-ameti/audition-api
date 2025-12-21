@@ -35,7 +35,8 @@ class WebServiceConfigurationTest {
 
     @BeforeEach
     void setUp() {
-        responseHeaderInjector = mock(ResponseHeaderInjector.class);
+        // Create a real ResponseHeaderInjector for testing
+        responseHeaderInjector = new ResponseHeaderInjector(true, "X-Trace-Id", "X-Span-Id");
         configuration = new WebServiceConfiguration(responseHeaderInjector);
         auditionLogger = new AuditionLogger();
     }
