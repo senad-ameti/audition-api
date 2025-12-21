@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -42,10 +43,18 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public RestTemplate restTemplate() {
+    public RestTemplate restTemplate(final ObjectMapper objectMapper) {
         final RestTemplate restTemplate = new RestTemplate(
             new BufferingClientHttpRequestFactory(createClientFactory()));
-        // TODO use object mapper
+
+        // Remove default Jackson converter and add custom one with our ObjectMapper
+        restTemplate.getMessageConverters().removeIf(converter ->
+            converter instanceof MappingJackson2HttpMessageConverter);
+
+        final MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
+        jacksonConverter.setObjectMapper(objectMapper);
+        restTemplate.getMessageConverters().add(jacksonConverter);
+
         // TODO create a logging interceptor that logs request/response for rest template calls.
 
         return restTemplate;
