@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST controller for handling audition-related API requests. Provides endpoints for retrieving posts and comments from
+ * an external service.
+ */
 @RestController
 @RequiredArgsConstructor
 @Validated
@@ -22,6 +26,13 @@ public class AuditionController {
 
     private final AuditionService auditionService;
 
+    /**
+     * Retrieves a list of posts, optionally filtered by user ID or post ID.
+     *
+     * @param userId the user ID to filter posts by (optional)
+     * @param id     the post ID to filter by (optional)
+     * @return a list of {@link AuditionPost} objects
+     */
     @RequestMapping(value = "/posts", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody List<AuditionPost> getPosts(
         @RequestParam(required = false) @PositiveInteger(fieldName = "User ID", optional = true) final String userId,
@@ -31,18 +42,36 @@ public class AuditionController {
             id != null ? Integer.parseInt(id) : null);
     }
 
+    /**
+     * Retrieves a single post by its ID.
+     *
+     * @param postId the ID of the post to retrieve
+     * @return the {@link AuditionPost} object
+     */
     @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody AuditionPost getPosts(
         @PathVariable("id") @PositiveInteger(fieldName = "Post ID") final String postId) {
         return auditionService.getPostById(postId);
     }
 
+    /**
+     * Retrieves comments for a specific post.
+     *
+     * @param postId the ID of the post
+     * @return a list of {@link Comment} objects
+     */
     @RequestMapping(value = "/posts/{id}/comments", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody List<Comment> getCommentsForPost(
         @PathVariable("id") @PositiveInteger(fieldName = "Post ID") final String postId) {
         return auditionService.getCommentsForPost(postId);
     }
 
+    /**
+     * Retrieves a post along with its comments.
+     *
+     * @param postId the ID of the post
+     * @return the {@link AuditionPost} object with comments included
+     */
     @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, params = "includeComments=true", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody AuditionPost getPostWithComments(
         @PathVariable("id") @PositiveInteger(fieldName = "Post ID") final String postId) {
