@@ -668,8 +668,10 @@ class ExceptionControllerAdviceTest {
         }
 
         private Exception createHttpMessageNotReadableException() {
+            final org.springframework.http.HttpInputMessage mockInputMessage =
+                org.mockito.Mockito.mock(org.springframework.http.HttpInputMessage.class);
             return new org.springframework.http.converter.HttpMessageNotReadableException(
-                "Message not readable", (org.springframework.http.HttpInputMessage) null);
+                "Message not readable", mockInputMessage);
         }
 
         private ConstraintViolation<Object> createMockViolation(final String message) {
