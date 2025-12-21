@@ -1,25 +1,30 @@
 package com.audition.configuration;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Interceptor that injects trace and span IDs into HTTP response headers. This enables correlation of API responses
- * with distributed tracing systems. Generates unique trace and span IDs for each request.
+ * Filter that injects trace and span IDs into HTTP response headers. This enables correlation of API responses with
+ * distributed tracing systems. Generates unique trace and span IDs for each request.
  */
 @Component
-public class ResponseHeaderInjector implements HandlerInterceptor {
+@Order(1)
+public class ResponseHeaderInjector implements Filter {
 
     private static final Logger logger = LoggerFactory.getLogger(ResponseHeaderInjector.class);
-    private static final String TRACE_ID_ATTRIBUTE = "X-TRACE-ID";
-    private static final String SPAN_ID_ATTRIBUTE = "X-SPAN-ID";
 
     private final boolean enabled;
     private final String traceIdHeaderName;
@@ -39,96 +44,46 @@ public class ResponseHeaderInjector implements HandlerInterceptor {
         this.enabled = enabled;
         this.traceIdHeaderName = traceIdHeaderName;
         this.spanIdHeaderName = spanIdHeaderName;
-        logger.info("ResponseHeaderInjector initialized: enabled={}, traceHeader={}, spanHeader={}",
+        logger.info("ResponseHeaderInjector initialized as Filter: enabled={}, traceHeader={}, spanHeader={}",
             enabled, traceIdHeaderName, spanIdHeaderName);
     }
 
-    /**
-     * Generates trace and span IDs before request processing.
-     *
-     * @param request  the HTTP request
-     * @param response the HTTP response
-     * @param handler  the handler that will process the request
-     * @return true to continue processing
-     */
     @Override
-    public boolean preHandle(
-        final HttpServletRequest request,
-        final HttpServletResponse response,
-        final Object handler) {
+    public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
+        throws IOException, ServletException {
 
-        if (!enabled) {
-            return true;
+        if (!enabled || !(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
+            chain.doFilter(request, response);
+            return;
         }
+
+        final HttpServletRequest httpRequest = (HttpServletRequest) request;
+        final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         // Generate trace ID and span ID
         final String traceId = generateTraceId();
         final String spanId = generateSpanId();
 
-        // Store in request attributes for use in postHandle
-        request.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
-        request.setAttribute(SPAN_ID_ATTRIBUTE, spanId);
-
-        // Also add to MDC for logging
+        // Add to MDC for logging
         MDC.put("traceId", traceId);
         MDC.put("spanId", spanId);
 
-        logger.debug("Generated trace ID: {} and span ID: {} for request: {}", traceId, spanId,
-            request.getRequestURI());
+        try {
+            // Set headers BEFORE processing the request
+            httpResponse.setHeader(traceIdHeaderName, traceId);
+            httpResponse.setHeader(spanIdHeaderName, spanId);
 
-        return true;
-    }
+            logger.debug("Set trace headers - {}={}, {}={} for request: {}",
+                traceIdHeaderName, traceId, spanIdHeaderName, spanId, httpRequest.getRequestURI());
 
-    /**
-     * Injects trace and span IDs into response headers after request processing.
-     *
-     * @param request  the HTTP request
-     * @param response the HTTP response
-     * @param handler  the handler that processed the request
-     */
-    @Override
-    public void postHandle(
-        final HttpServletRequest request,
-        final HttpServletResponse response,
-        final Object handler,
-        final org.springframework.web.servlet.ModelAndView modelAndView) {
+            // Continue the filter chain
+            chain.doFilter(request, response);
 
-        if (!enabled) {
-            return;
+        } finally {
+            // Clean up MDC
+            MDC.remove("traceId");
+            MDC.remove("spanId");
         }
-
-        final String traceId = (String) request.getAttribute(TRACE_ID_ATTRIBUTE);
-        final String spanId = (String) request.getAttribute(SPAN_ID_ATTRIBUTE);
-
-        if (traceId != null && !traceId.isEmpty()) {
-            response.setHeader(traceIdHeaderName, traceId);
-            logger.debug("Added trace ID header: {}={}", traceIdHeaderName, traceId);
-        }
-
-        if (spanId != null && !spanId.isEmpty()) {
-            response.setHeader(spanIdHeaderName, spanId);
-            logger.debug("Added span ID header: {}={}", spanIdHeaderName, spanId);
-        }
-    }
-
-    /**
-     * Cleans up MDC after request completion.
-     *
-     * @param request  the HTTP request
-     * @param response the HTTP response
-     * @param handler  the handler that processed the request
-     * @param ex       any exception thrown during processing
-     */
-    @Override
-    public void afterCompletion(
-        final HttpServletRequest request,
-        final HttpServletResponse response,
-        final Object handler,
-        final Exception ex) {
-
-        // Clean up MDC
-        MDC.remove("traceId");
-        MDC.remove("spanId");
     }
 
     /**

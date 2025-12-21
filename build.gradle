@@ -37,24 +37,51 @@ ext {
 
 dependencies {
 
-    // TODO Clean up unused dependencies. Add comments on consideration on any improvements you made.
-    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    /* Core Spring Boot Starters - Essential dependencies for the application */
+
+    // Web framework for REST API endpoints
     implementation "org.springframework.boot:spring-boot-starter-web"
+
+    // Health checks and metrics via /actuator endpoints
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+
+    // Bean validation (JSR-303) for request validation (@Valid, custom validators)
     implementation "org.springframework.boot:spring-boot-starter-validation"
+
+    // Caching abstraction with Caffeine as implementation
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "com.github.ben-manes.caffeine:caffeine"
-    implementation "org.springframework.cloud:spring-cloud-starter-config"
-    implementation "org.apache.commons:commons-lang3:3.20.0"
 
-    developmentOnly "org.springframework.boot:spring-boot-devtools"
+    /* Configuration & Observability */
+
+    // Spring Cloud Config client for externalized configuration
+    implementation "org.springframework.cloud:spring-cloud-starter-config"
+
+    // Prometheus metrics registry for monitoring (runtime only, not needed for compilation)
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
 
+    /* Utilities */
 
+    // Apache Commons Lang3 for utility methods (StringUtils, etc.)
+    implementation "org.apache.commons:commons-lang3:3.20.0"
+
+    /* Logging - Note: SLF4J and Logback are already provided by spring-boot-starter-web,
+       but explicit versions ensure consistency and allow custom logback configuration */
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
     implementation "ch.qos.logback:logback-core:${logbackVersion}"
     implementation "ch.qos.logback:logback-classic:${logbackVersion}"
 
+    /* Development Tools */
+
+    // Hot reload and developer tools (only active during development)
+    developmentOnly "org.springframework.boot:spring-boot-devtools"
+
+    /* Test Dependencies */
+
+    // Spring Boot testing framework with JUnit 5, Mockito, AssertJ
     testImplementation "org.springframework.boot:spring-boot-starter-test"
+
+    // WireMock for mocking external HTTP services in component tests
     testImplementation 'org.wiremock.integrations:wiremock-spring-boot:3.2.0'
 }
 
