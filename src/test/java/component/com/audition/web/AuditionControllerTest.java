@@ -423,7 +423,7 @@ class AuditionControllerTest {
             mockMvc.perform(get("/posts/" + postId + "?includeComments=true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.comments", hasSize(0)));
+                .andExpect(jsonPath("$.comments").doesNotExist()); // Empty collections are excluded with NON_EMPTY
         }
 
         @Test

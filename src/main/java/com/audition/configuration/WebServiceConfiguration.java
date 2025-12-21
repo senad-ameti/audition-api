@@ -1,6 +1,11 @@
 package com.audition.configuration;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import java.text.SimpleDateFormat;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
@@ -16,13 +21,24 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
 
     @Bean
     public ObjectMapper objectMapper() {
-        // TODO configure Jackson Object mapper that
-        //  1. allows for date format as yyyy-MM-dd
-        //  2. Does not fail on unknown properties
-        //  3. maps to camelCase
-        //  4. Does not include null values or empty values
-        //  5. does not write datas as timestamps.
-        return new ObjectMapper();
+        final ObjectMapper objectMapper = new ObjectMapper();
+
+        // 1. allows for date format as yyyy-MM-dd
+        objectMapper.setDateFormat(new SimpleDateFormat(YEAR_MONTH_DAY_PATTERN));
+
+        // 2. Does not fail on unknown properties
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        // 3. maps to camelCase
+        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
+
+        // 4. Does not include null values or empty values
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+
+        // 5. does not write dates as timestamps
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+        return objectMapper;
     }
 
     @Bean
