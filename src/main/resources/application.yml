@@ -26,7 +26,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: 'health,info' #TODO enable only info and health for security purposes. Consider that we may want to still access other actuator endpoints securely.
+        include: '*'
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
@@ -35,6 +35,8 @@ logging:
     com.audition.configuration.ResponseHeaderInjector: DEBUG
 
 audition:
+  security:
+    actuator-api-key: ${ACTUATOR_API_KEY:}
   logging:
     rest-template:
       enabled: false

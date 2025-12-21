@@ -3,8 +3,14 @@ management:
     enabled: true
     sampling:
       probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: '*'
 
 audition:
+  security:
+    actuator-api-key: test-api-key-12345
   tracing:
     response-headers:
       enabled: true

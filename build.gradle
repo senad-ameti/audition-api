@@ -48,6 +48,9 @@ dependencies {
     // Bean validation (JSR-303) for request validation (@Valid, custom validators)
     implementation "org.springframework.boot:spring-boot-starter-validation"
 
+    // Security framework for authentication and authorization
+    implementation "org.springframework.boot:spring-boot-starter-security"
+
     // Caching abstraction with Caffeine as implementation
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "com.github.ben-manes.caffeine:caffeine"
