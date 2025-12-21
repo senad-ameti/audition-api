@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.text.SimpleDateFormat;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,13 +16,17 @@ import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
 @Configuration
+@RequiredArgsConstructor
 public class WebServiceConfiguration implements WebMvcConfigurer {
 
     private static final String YEAR_MONTH_DAY_PATTERN = "yyyy-MM-dd";
+
+    private final ResponseHeaderInjector responseHeaderInjector;
 
     @Bean
     public ObjectMapper objectMapper() {
@@ -64,6 +69,11 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
         restTemplate.getInterceptors().add(new RestTemplateLoggingInterceptor(auditionLogger, loggingEnabled));
 
         return restTemplate;
+    }
+
+    @Override
+    public void addInterceptors(final InterceptorRegistry registry) {
+        registry.addInterceptor(responseHeaderInjector);
     }
 
     private SimpleClientHttpRequestFactory createClientFactory() {

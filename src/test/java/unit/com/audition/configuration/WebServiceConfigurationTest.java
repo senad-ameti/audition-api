@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.audition.common.logging.AuditionLogger;
 import com.audition.common.logging.RestTemplateLoggingInterceptor;
+import com.audition.configuration.ResponseHeaderInjector;
 import com.audition.configuration.WebServiceConfiguration;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -21,16 +24,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 
 @DisplayName("WebServiceConfiguration Unit Tests")
 class WebServiceConfigurationTest {
 
     private WebServiceConfiguration configuration;
     private AuditionLogger auditionLogger;
+    private ResponseHeaderInjector responseHeaderInjector;
 
     @BeforeEach
     void setUp() {
-        configuration = new WebServiceConfiguration();
+        responseHeaderInjector = mock(ResponseHeaderInjector.class);
+        configuration = new WebServiceConfiguration(responseHeaderInjector);
         auditionLogger = new AuditionLogger();
     }
 
@@ -209,6 +215,21 @@ class WebServiceConfigurationTest {
 
             assertEquals(1, restTemplate.getInterceptors().size());
             assertTrue(restTemplate.getInterceptors().get(0) instanceof RestTemplateLoggingInterceptor);
+        }
+    }
+
+    @Nested
+    @DisplayName("addInterceptors")
+    class AddInterceptorsTests {
+
+        @Test
+        @DisplayName("registers ResponseHeaderInjector interceptor")
+        void registersResponseHeaderInjector() {
+            InterceptorRegistry registry = mock(InterceptorRegistry.class);
+
+            configuration.addInterceptors(registry);
+
+            verify(registry).addInterceptor(responseHeaderInjector);
         }
     }
 }

@@ -37,6 +37,11 @@ audition:
   logging:
     rest-template:
       enabled: false
+  tracing:
+    response-headers:
+      enabled: true
+      trace-id-header-name: X-Trace-Id
+      span-id-header-name: X-Span-Id
   integration:
     posts-url: https://jsonplaceholder.typicode.com/posts
     posts-by-id-url: https://jsonplaceholder.typicode.com/posts/{id}

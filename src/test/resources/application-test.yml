@@ -1,0 +1,13 @@
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+
+audition:
+  tracing:
+    response-headers:
+      enabled: true
+      trace-id-header-name: X-Test-Trace-Id
+      span-id-header-name: X-Test-Span-Id
+
