@@ -6,8 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public class PositiveIntegerValidator implements ConstraintValidator<PositiveInteger, String> {
 
-    private String fieldName;
-    private boolean optional;
+    private transient String fieldName;
+    private transient boolean optional;
 
     @Override
     public void initialize(final PositiveInteger constraintAnnotation) {

@@ -124,13 +124,14 @@ public class AuditionLogger {
             return "ProblemDetail: No details available";
         }
 
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Status: ").append(standardProblemDetail.getStatus());
-        sb.append(" | Title: ").append(
-            StringUtils.isNotBlank(standardProblemDetail.getTitle())
-                ? standardProblemDetail.getTitle() : "No title provided");
-        sb.append(" | Detail: ").append(
-            StringUtils.isNotBlank(standardProblemDetail.getDetail())
+        final StringBuilder sb = new StringBuilder(200);
+        sb.append("Status: ")
+            .append(standardProblemDetail.getStatus())
+            .append(" | Title: ")
+            .append(StringUtils.isNotBlank(standardProblemDetail.getTitle())
+                ? standardProblemDetail.getTitle() : "No title provided")
+            .append(" | Detail: ")
+            .append(StringUtils.isNotBlank(standardProblemDetail.getDetail())
                 ? standardProblemDetail.getDetail() : "No detail provided");
 
         if (standardProblemDetail.getType() != null) {

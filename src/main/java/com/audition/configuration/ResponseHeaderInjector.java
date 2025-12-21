@@ -24,11 +24,11 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class ResponseHeaderInjector implements Filter {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResponseHeaderInjector.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResponseHeaderInjector.class);
 
-    private final boolean enabled;
-    private final String traceIdHeaderName;
-    private final String spanIdHeaderName;
+    private final transient boolean enabled;
+    private final transient String traceIdHeaderName;
+    private final transient String spanIdHeaderName;
 
     /**
      * Constructs a ResponseHeaderInjector with the specified configuration.
@@ -44,7 +44,7 @@ public class ResponseHeaderInjector implements Filter {
         this.enabled = enabled;
         this.traceIdHeaderName = traceIdHeaderName;
         this.spanIdHeaderName = spanIdHeaderName;
-        logger.info("ResponseHeaderInjector initialized as Filter: enabled={}, traceHeader={}, spanHeader={}",
+        LOGGER.info("ResponseHeaderInjector initialized as Filter: enabled={}, traceHeader={}, spanHeader={}",
             enabled, traceIdHeaderName, spanIdHeaderName);
     }
 
@@ -57,7 +57,6 @@ public class ResponseHeaderInjector implements Filter {
             return;
         }
 
-        final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         // Generate trace ID and span ID
@@ -73,8 +72,11 @@ public class ResponseHeaderInjector implements Filter {
             httpResponse.setHeader(traceIdHeaderName, traceId);
             httpResponse.setHeader(spanIdHeaderName, spanId);
 
-            logger.debug("Set trace headers - {}={}, {}={} for request: {}",
-                traceIdHeaderName, traceId, spanIdHeaderName, spanId, httpRequest.getRequestURI());
+            if (LOGGER.isDebugEnabled()) {
+                final HttpServletRequest httpRequest = (HttpServletRequest) request;
+                LOGGER.debug("Set trace headers - {}={}, {}={} for request: {}",
+                    traceIdHeaderName, traceId, spanIdHeaderName, spanId, httpRequest.getRequestURI());
+            }
 
             // Continue the filter chain
             chain.doFilter(request, response);

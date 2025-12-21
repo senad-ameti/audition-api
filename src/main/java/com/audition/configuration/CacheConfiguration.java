@@ -22,7 +22,7 @@ public class CacheConfiguration {
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("posts", "postsById", "comments",
+        final CaffeineCacheManager cacheManager = new CaffeineCacheManager("posts", "postsById", "comments",
             "postWithComments");
         cacheManager.setCaffeine(Caffeine.newBuilder()
             .expireAfterWrite(Duration.ofMinutes(CACHE_TTL_MINUTES))

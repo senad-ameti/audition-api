@@ -119,7 +119,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     private ProblemDetail createProblemDetail(final Exception exception,
         final HttpStatusCode statusCode) {
         final ProblemDetail problemDetail = ProblemDetail.forStatus(statusCode);
-        problemDetail.setDetail(getMessageFromException(exception));
+        problemDetail.setDetail(getMessageFromException());
         if (exception instanceof SystemException) {
             problemDetail.setTitle(((SystemException) exception).getTitle());
         } else {
@@ -131,10 +131,9 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     /**
      * Retrieves the error message from the exception. Currently returns a default message.
      *
-     * @param exception the exception
      * @return the error message string
      */
-    private String getMessageFromException(final Exception exception) {
+    private String getMessageFromException() {
         return DEFAULT_MESSAGE;
     }
 
@@ -168,7 +167,9 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         try {
             return HttpStatusCode.valueOf(exception.getStatusCode());
         } catch (final IllegalArgumentException iae) {
-            logger.info(LOG, ERROR_MESSAGE + exception.getStatusCode());
+            if (LOG.isInfoEnabled()) {
+                logger.info(LOG, ERROR_MESSAGE + exception.getStatusCode());
+            }
             return INTERNAL_SERVER_ERROR;
         }
     }

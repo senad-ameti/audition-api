@@ -44,8 +44,8 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
         // Only apply API key authentication to actuator endpoints (excluding health and info)
         if (requestPath.startsWith("/actuator/")
-            && !requestPath.equals("/actuator/health")
-            && !requestPath.equals("/actuator/info")) {
+            && !"/actuator/health".equals(requestPath)
+            && !"/actuator/info".equals(requestPath)) {
 
             final String apiKey = request.getHeader(API_KEY_HEADER);
 

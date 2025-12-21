@@ -26,11 +26,11 @@ public class AuditionIntegrationClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuditionIntegrationClient.class);
 
-    private final RestTemplate restTemplate;
-    private final AuditionLogger logger;
-    private final String postsUrl;
-    private final String postsByIdUrl;
-    private final String postCommentsUrl;
+    private final transient RestTemplate restTemplate;
+    private final transient AuditionLogger logger;
+    private final transient String postsUrl;
+    private final transient String postsByIdUrl;
+    private final transient String postCommentsUrl;
 
     /**
      * Constructs an AuditionIntegrationClient with the required dependencies.
@@ -42,11 +42,11 @@ public class AuditionIntegrationClient {
      * @param postCommentsUrl the URL template for fetching comments for a post
      */
     public AuditionIntegrationClient(
-        @Autowired RestTemplate restTemplate,
-        @Autowired AuditionLogger logger,
-        @Value("${audition.integration.posts-url}") String postsUrl,
-        @Value("${audition.integration.posts-by-id-url}") String postsByIdUrl,
-        @Value("${audition.integration.post-comments-url}") String postCommentsUrl) {
+        @Autowired final RestTemplate restTemplate,
+        @Autowired final AuditionLogger logger,
+        @Value("${audition.integration.posts-url}") final String postsUrl,
+        @Value("${audition.integration.posts-by-id-url}") final String postsByIdUrl,
+        @Value("${audition.integration.post-comments-url}") final String postCommentsUrl) {
         this.restTemplate = restTemplate;
         this.logger = logger;
         this.postsUrl = postsUrl;
@@ -93,7 +93,7 @@ public class AuditionIntegrationClient {
         } catch (final HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found",
-                    404);
+                    404, e);
             } else {
                 throw new SystemException(e.getMessage(), "External API Error",
                     e.getStatusCode().value(), e);
@@ -113,8 +113,8 @@ public class AuditionIntegrationClient {
     @Cacheable(value = "postWithComments", key = "#postId", unless = "#result == null")
     public AuditionPost getPostWithComments(final String postId) {
         logger.logCacheMiss(LOG, "postWithComments", postId);
-        AuditionPost post = getPostById(postId);
-        List<Comment> comments = getCommentsForPost(postId);
+        final AuditionPost post = getPostById(postId);
+        final List<Comment> comments = getCommentsForPost(postId);
         post.setComments(comments);
         return post;
     }
@@ -132,7 +132,7 @@ public class AuditionIntegrationClient {
     public List<Comment> getCommentsForPost(final String postId) {
         logger.logCacheMiss(LOG, "comments", postId);
         try {
-            Comment[] comments = Optional.ofNullable(
+            final Comment[] comments = Optional.ofNullable(
                     restTemplate.getForObject(postCommentsUrl, Comment[].class, postId))
                 .orElse(new Comment[0]);
             if (comments.length == 0) {
@@ -142,7 +142,7 @@ public class AuditionIntegrationClient {
         } catch (final HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new SystemException("Cannot find comments for Post with id " + postId,
-                    "Resource Not Found", 404);
+                    "Resource Not Found", 404, e);
             } else {
                 throw new SystemException(e.getMessage(), "External API Error",
                     e.getStatusCode().value(), e);

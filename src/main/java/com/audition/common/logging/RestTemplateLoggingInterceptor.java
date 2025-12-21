@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
 
     private static final Logger LOG = LoggerFactory.getLogger(RestTemplateLoggingInterceptor.class);
 
-    private static final int MAX_BODY_SIZE = 10240; // 10KB
+    private static final int MAX_BODY_SIZE = 10_240; // 10KB
     private static final String REDACTED = "[REDACTED]";
     private static final String TRUNCATED_MARKER = "... [TRUNCATED - showing first 10240 bytes]";
     private static final String TRACE_ID_KEY = "traceId";
@@ -54,8 +55,8 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
         "application/gzip"
     );
 
-    private final AuditionLogger logger;
-    private final boolean enabled;
+    private final transient AuditionLogger logger;
+    private final transient boolean enabled;
 
     /**
      * Constructs a RestTemplateLoggingInterceptor with the specified logger and enabled flag.
@@ -99,24 +100,28 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
      * @param body    the request body as bytes
      */
     private void logRequest(final HttpRequest request, final byte[] body) {
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
         try {
-            final StringBuilder message = new StringBuilder();
-            message.append("\n===== HTTP REQUEST =====\n");
-            message.append("Trace ID: ").append(getTraceId()).append("\n");
-            message.append("Span ID: ").append(getSpanId()).append("\n");
-            message.append("Method: ").append(request.getMethod()).append("\n");
-            message.append("URI: ").append(request.getURI()).append("\n");
-            message.append("Headers: ").append(sanitizeHeaders(request.getHeaders())).append("\n");
+            final StringBuilder message = new StringBuilder(512);
+            message.append("\n===== HTTP REQUEST =====\nTrace ID: ").append(getTraceId())
+                .append("\nSpan ID: ").append(getSpanId())
+                .append("\nMethod: ").append(request.getMethod())
+                .append("\nURI: ").append(request.getURI())
+                .append("\nHeaders: ").append(sanitizeHeaders(request.getHeaders())).append('\n');
 
             if (body != null && body.length > 0 && isTextContent(request.getHeaders())) {
                 final String bodyContent = truncateBody(new String(body, StandardCharsets.UTF_8));
-                message.append("Body: ").append(bodyContent).append("\n");
+                message.append("Body: ").append(bodyContent).append('\n');
             }
 
             message.append("========================");
             logger.debug(LOG, message.toString());
-        } catch (final Exception e) {
-            logger.debug(LOG, "Error logging request: " + e.getMessage());
+        } catch (final RuntimeException e) {
+            if (LOG.isDebugEnabled()) {
+                logger.debug(LOG, "Error logging request: " + e.getMessage());
+            }
         }
     }
 
@@ -128,21 +133,23 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
      * @param duration the request duration in milliseconds
      */
     private void logResponse(final HttpRequest request, final ClientHttpResponse response, final long duration) {
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
         try {
-            final StringBuilder message = new StringBuilder();
-            message.append("\n===== HTTP RESPONSE =====\n");
-            message.append("Trace ID: ").append(getTraceId()).append("\n");
-            message.append("Span ID: ").append(getSpanId()).append("\n");
-            message.append("URI: ").append(request.getURI()).append("\n");
-            message.append("Status: ").append(response.getStatusCode().value()).append(" ")
-                .append(response.getStatusText()).append("\n");
-            message.append("Duration: ").append(duration).append("ms\n");
-            message.append("Headers: ").append(sanitizeHeaders(response.getHeaders())).append("\n");
+            final StringBuilder message = new StringBuilder(512);
+            message.append("\n===== HTTP RESPONSE =====\nTrace ID: ").append(getTraceId())
+                .append("\nSpan ID: ").append(getSpanId())
+                .append("\nURI: ").append(request.getURI())
+                .append("\nStatus: ").append(response.getStatusCode().value()).append(' ')
+                .append(response.getStatusText())
+                .append("\nDuration: ").append(duration).append("ms\nHeaders: ")
+                .append(sanitizeHeaders(response.getHeaders())).append('\n');
 
             if (isTextContent(response.getHeaders())) {
                 final String bodyContent = readResponseBody(response);
                 if (!bodyContent.isEmpty()) {
-                    message.append("Body: ").append(truncateBody(bodyContent)).append("\n");
+                    message.append("Body: ").append(truncateBody(bodyContent)).append('\n');
                 }
             } else {
                 message.append("Body: [BINARY CONTENT]\n");
@@ -150,8 +157,10 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
 
             message.append("=========================");
             logger.debug(LOG, message.toString());
-        } catch (final Exception e) {
-            logger.debug(LOG, "Error logging response: " + e.getMessage());
+        } catch (final RuntimeException | IOException e) {
+            if (LOG.isDebugEnabled()) {
+                logger.debug(LOG, "Error logging response: " + e.getMessage());
+            }
         }
     }
 
@@ -163,6 +172,9 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
      * @param duration the request duration in milliseconds
      */
     private void logError(final HttpRequest request, final IOException e, final long duration) {
+        if (!LOG.isDebugEnabled()) {
+            return;
+        }
         try {
             final String message = "\n===== HTTP ERROR =====\n"
                 + "Trace ID: " + getTraceId() + "\n"
@@ -172,8 +184,10 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
                 + "Error: " + e.getMessage() + "\n"
                 + "======================";
             logger.debug(LOG, message);
-        } catch (final Exception ex) {
-            logger.debug(LOG, "Error logging error: " + ex.getMessage());
+        } catch (final RuntimeException ex) {
+            if (LOG.isDebugEnabled()) {
+                logger.debug(LOG, "Error logging error: " + ex.getMessage());
+            }
         }
     }
 
@@ -207,7 +221,7 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
      * @return true if the header is sensitive, false otherwise
      */
     private boolean isSensitiveHeader(final String headerName) {
-        return SENSITIVE_HEADERS.contains(headerName.toLowerCase());
+        return SENSITIVE_HEADERS.contains(headerName.toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -222,23 +236,15 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
             return true; // Assume text if no content type is specified
         }
 
-        final String typeString = contentType.toString().toLowerCase();
+        final String typeString = contentType.toString().toLowerCase(Locale.ROOT);
 
         // Check for binary prefixes
-        for (String prefix : BINARY_CONTENT_TYPE_PREFIXES) {
-            if (typeString.startsWith(prefix)) {
-                return false;
-            }
+        if (BINARY_CONTENT_TYPE_PREFIXES.stream().anyMatch(typeString::startsWith)) {
+            return false;
         }
 
         // Check for exact binary types
-        for (String binaryType : BINARY_CONTENT_TYPES) {
-            if (typeString.startsWith(binaryType)) {
-                return false;
-            }
-        }
-
-        return true;
+        return BINARY_CONTENT_TYPES.stream().noneMatch(typeString::startsWith);
     }
 
     /**
