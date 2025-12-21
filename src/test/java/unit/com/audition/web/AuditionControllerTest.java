@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.audition.model.AuditionPost;
+import com.audition.model.Comment;
 import com.audition.service.AuditionService;
 import com.audition.web.AuditionController;
 import jakarta.validation.ConstraintViolation;
@@ -266,6 +267,177 @@ class AuditionControllerTest {
         @DisplayName("throws ConstraintViolationException when postId is negative")
         void throwsExceptionWhenPostIdIsNegative() throws Exception {
             Method method = AuditionController.class.getMethod("getPosts", String.class);
+            Object[] parameterValues = {"-1"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a positive integer"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /posts/{id}/comments")
+    class GetCommentsForPost {
+
+        @Test
+        @DisplayName("getCommentsForPost returns comments from service")
+        void getCommentsForPostReturnsComments() {
+            final String postId = "1";
+            Comment comment1 = new Comment();
+            comment1.setId(1);
+            comment1.setPostId(1);
+            comment1.setName("Comment 1");
+            comment1.setEmail("user1@test.com");
+            comment1.setBody("Comment body 1");
+
+            Comment comment2 = new Comment();
+            comment2.setId(2);
+            comment2.setPostId(1);
+            comment2.setName("Comment 2");
+            comment2.setEmail("user2@test.com");
+            comment2.setBody("Comment body 2");
+
+            when(auditionService.getCommentsForPost(postId)).thenReturn(Arrays.asList(comment1, comment2));
+
+            List<Comment> result = auditionController.getCommentsForPost(postId);
+
+            assertEquals(2, result.size());
+            assertEquals("Comment 1", result.get(0).getName());
+            assertEquals("user2@test.com", result.get(1).getEmail());
+            verify(auditionService).getCommentsForPost(postId);
+        }
+
+        @Test
+        @DisplayName("getCommentsForPost returns empty list when no comments exist")
+        void getCommentsForPostReturnsEmptyWhenNoComments() {
+            final String postId = "1";
+            when(auditionService.getCommentsForPost(postId)).thenReturn(Collections.emptyList());
+
+            List<Comment> result = auditionController.getCommentsForPost(postId);
+
+            assertEquals(0, result.size());
+            verify(auditionService).getCommentsForPost(postId);
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is null")
+        void throwsExceptionWhenPostIdIsNull() throws Exception {
+            Method method = AuditionController.class.getMethod("getCommentsForPost", String.class);
+            Object[] parameterValues = {null};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID cannot be null or empty"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is not a valid integer")
+        void throwsExceptionWhenPostIdIsNotInteger() throws Exception {
+            Method method = AuditionController.class.getMethod("getCommentsForPost", String.class);
+            Object[] parameterValues = {"abc"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a valid integer"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is negative")
+        void throwsExceptionWhenPostIdIsNegative() throws Exception {
+            Method method = AuditionController.class.getMethod("getCommentsForPost", String.class);
+            Object[] parameterValues = {"-1"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a positive integer"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /posts/{id}?includeComments=true")
+    class GetPostWithComments {
+
+        @Test
+        @DisplayName("getPostWithComments returns post with comments from service")
+        void getPostWithCommentsReturnsPostWithComments() {
+            final String postId = "1";
+            Comment comment1 = new Comment();
+            comment1.setId(1);
+            comment1.setPostId(1);
+            comment1.setName("Comment 1");
+            comment1.setEmail("user1@test.com");
+            comment1.setBody("Comment body 1");
+
+            AuditionPost post = new AuditionPost();
+            post.setId(1);
+            post.setUserId(5);
+            post.setTitle("Test Title");
+            post.setBody("Test Body");
+            post.setComments(Collections.singletonList(comment1));
+
+            when(auditionService.getPostWithComments(postId)).thenReturn(post);
+
+            AuditionPost result = auditionController.getPostWithComments(postId);
+
+            assertEquals(1, result.getId());
+            assertEquals("Test Title", result.getTitle());
+            assertEquals(1, result.getComments().size());
+            assertEquals("Comment 1", result.getComments().get(0).getName());
+            verify(auditionService).getPostWithComments(postId);
+        }
+
+        @Test
+        @DisplayName("getPostWithComments returns post with empty comments list")
+        void getPostWithCommentsReturnsPostWithEmptyComments() {
+            final String postId = "1";
+            AuditionPost post = new AuditionPost();
+            post.setId(1);
+            post.setUserId(5);
+            post.setTitle("Test Title");
+            post.setBody("Test Body");
+            post.setComments(Collections.emptyList());
+
+            when(auditionService.getPostWithComments(postId)).thenReturn(post);
+
+            AuditionPost result = auditionController.getPostWithComments(postId);
+
+            assertEquals(1, result.getId());
+            assertTrue(result.getComments().isEmpty());
+            verify(auditionService).getPostWithComments(postId);
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is null")
+        void throwsExceptionWhenPostIdIsNull() throws Exception {
+            Method method = AuditionController.class.getMethod("getPostWithComments", String.class);
+            Object[] parameterValues = {null};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID cannot be null or empty"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is not a valid integer")
+        void throwsExceptionWhenPostIdIsNotInteger() throws Exception {
+            Method method = AuditionController.class.getMethod("getPostWithComments", String.class);
+            Object[] parameterValues = {"abc"};
+            Set<ConstraintViolation<AuditionController>> violations =
+                executableValidator.validateParameters(auditionController, method, parameterValues);
+
+            assertTrue(!violations.isEmpty());
+            assertTrue(violations.iterator().next().getMessage().contains("Post ID must be a valid integer"));
+        }
+
+        @Test
+        @DisplayName("throws ConstraintViolationException when postId is negative")
+        void throwsExceptionWhenPostIdIsNegative() throws Exception {
+            Method method = AuditionController.class.getMethod("getPostWithComments", String.class);
             Object[] parameterValues = {"-1"};
             Set<ConstraintViolation<AuditionController>> violations =
                 executableValidator.validateParameters(auditionController, method, parameterValues);

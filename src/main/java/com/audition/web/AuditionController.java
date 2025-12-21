@@ -1,6 +1,7 @@
 package com.audition.web;
 
 import com.audition.model.AuditionPost;
+import com.audition.model.Comment;
 import com.audition.service.AuditionService;
 import com.audition.web.validation.PositiveInteger;
 import java.util.List;
@@ -36,6 +37,16 @@ public class AuditionController {
         return auditionService.getPostById(postId);
     }
 
-    // TODO Add additional methods to return comments for each post. Hint: Check https://jsonplaceholder.typicode.com/
+    @RequestMapping(value = "/posts/{id}/comments", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody List<Comment> getCommentsForPost(
+        @PathVariable("id") @PositiveInteger(fieldName = "Post ID") final String postId) {
+        return auditionService.getCommentsForPost(postId);
+    }
+
+    @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, params = "includeComments=true", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody AuditionPost getPostWithComments(
+        @PathVariable("id") @PositiveInteger(fieldName = "Post ID") final String postId) {
+        return auditionService.getPostWithComments(postId);
+    }
 
 }

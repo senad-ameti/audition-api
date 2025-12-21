@@ -3,6 +3,7 @@ package com.audition.service;
 import com.audition.common.logging.AuditionLogger;
 import com.audition.integration.AuditionIntegrationClient;
 import com.audition.model.AuditionPost;
+import com.audition.model.Comment;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -38,4 +39,13 @@ public class AuditionService {
         return auditionIntegrationClient.getPostById(postId);
     }
 
+    public AuditionPost getPostWithComments(final String postId) {
+        return auditionIntegrationClient.getPostWithComments(postId);
+    }
+
+    public List<Comment> getCommentsForPost(final String postId) {
+        return auditionIntegrationClient.getCommentsForPost(postId);
+    }
+
 }
+
