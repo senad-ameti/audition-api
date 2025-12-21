@@ -201,13 +201,13 @@ class AuditionServiceTest {
         @Test
         @DisplayName("returns post from client")
         void returnsPost() {
-            String postId = "1";
             AuditionPost expected = new AuditionPost();
             expected.setId(1);
             expected.setUserId(1);
             expected.setTitle("Test Post");
             expected.setBody("Test Body");
 
+            String postId = "1";
             when(auditionIntegrationClient.getPostById(postId)).thenReturn(expected);
 
             AuditionPost result = auditionService.getPostById(postId);
@@ -223,13 +223,13 @@ class AuditionServiceTest {
         @Test
         @DisplayName("returns post with comments from client")
         void returnsPostWithComments() {
-            String postId = "1";
             AuditionPost expected = new AuditionPost();
             expected.setId(1);
             expected.setUserId(1);
             expected.setTitle("Test Post");
             expected.setBody("Test Body");
 
+            String postId = "1";
             when(auditionIntegrationClient.getPostWithComments(postId)).thenReturn(expected);
 
             AuditionPost result = auditionService.getPostWithComments(postId);
@@ -245,7 +245,6 @@ class AuditionServiceTest {
         @Test
         @DisplayName("returns comments from client")
         void returnsComments() {
-            String postId = "1";
             Comment comment1 = new Comment();
             comment1.setId(1);
             comment1.setPostId(1);
@@ -254,6 +253,7 @@ class AuditionServiceTest {
             comment1.setBody("Comment body");
 
             List<Comment> expected = List.of(comment1);
+            String postId = "1";
 
             when(auditionIntegrationClient.getCommentsForPost(postId)).thenReturn(expected);
 

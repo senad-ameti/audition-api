@@ -15,10 +15,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingPathVariableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 
@@ -54,16 +63,16 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ProblemDetail handleMainException(final Exception e) {
-        // TODO Add handling for Exception
         final HttpStatusCode status = getHttpStatusCodeFromException(e);
+        logException(e, status);
         return createProblemDetail(e, status);
 
     }
 
     @ExceptionHandler(SystemException.class)
     ProblemDetail handleSystemException(final SystemException e) {
-        // TODO `Add Handling for SystemException
         final HttpStatusCode status = getHttpStatusCodeFromSystemException(e);
+        logException(e, status);
         return createProblemDetail(e, status);
 
     }
@@ -82,10 +91,17 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     }
 
     private String getMessageFromException(final Exception exception) {
-        if (StringUtils.isNotBlank(exception.getMessage())) {
-            return exception.getMessage();
-        }
         return DEFAULT_MESSAGE;
+    }
+
+    private void logException(final Exception exception, final HttpStatusCode status) {
+        if (status.is4xxClientError()) {
+            final String detail =
+                StringUtils.isNotBlank(exception.getMessage()) ? exception.getMessage() : DEFAULT_MESSAGE;
+            logger.warn(LOG, "Handled client error with status " + status.value() + " - " + detail);
+        } else if (status.is5xxServerError()) {
+            logger.logErrorWithException(LOG, "Unhandled server error", exception);
+        }
     }
 
     private HttpStatusCode getHttpStatusCodeFromSystemException(final SystemException exception) {
@@ -102,6 +118,20 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
             return ((HttpClientErrorException) exception).getStatusCode();
         } else if (exception instanceof HttpRequestMethodNotSupportedException) {
             return METHOD_NOT_ALLOWED;
+        } else if (exception instanceof MethodArgumentNotValidException
+            || exception instanceof BindException
+            || exception instanceof ConstraintViolationException
+            || exception instanceof MissingServletRequestParameterException
+            || exception instanceof MissingPathVariableException
+            || exception instanceof MethodArgumentTypeMismatchException
+            || exception instanceof ServletRequestBindingException
+            || exception instanceof HttpMessageNotReadableException
+            || exception instanceof HttpMediaTypeNotSupportedException) {
+            return BAD_REQUEST;
+        }
+        final ResponseStatus responseStatus = exception.getClass().getAnnotation(ResponseStatus.class);
+        if (responseStatus != null) {
+            return HttpStatusCode.valueOf(responseStatus.code().value());
         }
         return INTERNAL_SERVER_ERROR;
     }
