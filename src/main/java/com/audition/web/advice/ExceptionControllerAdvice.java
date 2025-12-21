@@ -31,6 +31,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 
+/**
+ * Global exception handler for the application. This class extends ResponseEntityExceptionHandler to provide
+ * centralized exception handling for REST controllers, converting exceptions into standardized ProblemDetail
+ * responses.
+ */
 @ControllerAdvice
 public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
@@ -42,12 +47,24 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     @Autowired
     private transient AuditionLogger logger;
 
+    /**
+     * Handles HttpClientErrorException by creating a ProblemDetail response.
+     *
+     * @param e the HttpClientErrorException that was thrown
+     * @return a ProblemDetail object representing the error
+     */
     @ExceptionHandler(HttpClientErrorException.class)
     ProblemDetail handleHttpClientException(final HttpClientErrorException e) {
         return createProblemDetail(e, e.getStatusCode());
 
     }
 
+    /**
+     * Handles ConstraintViolationException by aggregating violation messages into a single error detail.
+     *
+     * @param e the ConstraintViolationException that was thrown
+     * @return a ProblemDetail object with BAD_REQUEST status and violation messages
+     */
     @ExceptionHandler(ConstraintViolationException.class)
     ProblemDetail handleConstraintViolationException(final ConstraintViolationException e) {
         final String errorMessage = e.getConstraintViolations().stream()
@@ -61,6 +78,12 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     }
 
 
+    /**
+     * Handles general Exception by determining the appropriate HTTP status and logging the error.
+     *
+     * @param e the Exception that was thrown
+     * @return a ProblemDetail object representing the error
+     */
     @ExceptionHandler(Exception.class)
     ProblemDetail handleMainException(final Exception e) {
         final HttpStatusCode status = getHttpStatusCodeFromException(e);
@@ -69,6 +92,12 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
     }
 
+    /**
+     * Handles SystemException by extracting status code and logging the error.
+     *
+     * @param e the SystemException that was thrown
+     * @return a ProblemDetail object representing the error
+     */
     @ExceptionHandler(SystemException.class)
     ProblemDetail handleSystemException(final SystemException e) {
         final HttpStatusCode status = getHttpStatusCodeFromSystemException(e);
@@ -78,6 +107,13 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     }
 
 
+    /**
+     * Creates a ProblemDetail object from the given exception and status code.
+     *
+     * @param exception  the exception that occurred
+     * @param statusCode the HTTP status code for the response
+     * @return a ProblemDetail object with the appropriate details
+     */
     private ProblemDetail createProblemDetail(final Exception exception,
         final HttpStatusCode statusCode) {
         final ProblemDetail problemDetail = ProblemDetail.forStatus(statusCode);
@@ -90,10 +126,22 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         return problemDetail;
     }
 
+    /**
+     * Retrieves the error message from the exception. Currently returns a default message.
+     *
+     * @param exception the exception
+     * @return the error message string
+     */
     private String getMessageFromException(final Exception exception) {
         return DEFAULT_MESSAGE;
     }
 
+    /**
+     * Logs the exception based on the HTTP status code. Client errors are logged as warnings, server errors as errors.
+     *
+     * @param exception the exception to log
+     * @param status    the HTTP status code
+     */
     private void logException(final Exception exception, final HttpStatusCode status) {
         if (status.is4xxClientError()) {
             final String detail =
@@ -104,6 +152,13 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         }
     }
 
+    /**
+     * Extracts the HTTP status code from a SystemException. Falls back to INTERNAL_SERVER_ERROR if the code is
+     * invalid.
+     *
+     * @param exception the SystemException
+     * @return the corresponding HttpStatusCode
+     */
     private HttpStatusCode getHttpStatusCodeFromSystemException(final SystemException exception) {
         try {
             return HttpStatusCode.valueOf(exception.getStatusCode());
@@ -113,6 +168,13 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         }
     }
 
+    /**
+     * Determines the HTTP status code from a general Exception. Maps specific exception types to appropriate status
+     * codes.
+     *
+     * @param exception the Exception
+     * @return the corresponding HttpStatusCode
+     */
     private HttpStatusCode getHttpStatusCodeFromException(final Exception exception) {
         if (exception instanceof HttpClientErrorException) {
             return ((HttpClientErrorException) exception).getStatusCode();
