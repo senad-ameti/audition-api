@@ -6,9 +6,9 @@ import com.audition.model.AuditionPost;
 import com.audition.model.Comment;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,15 +16,14 @@ import org.springframework.stereotype.Service;
  * external integration client.
  */
 @Service
+@RequiredArgsConstructor
 public class AuditionService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuditionService.class);
 
-    @Autowired
-    private transient AuditionIntegrationClient auditionIntegrationClient;
+    private final AuditionIntegrationClient auditionIntegrationClient;
 
-    @Autowired
-    private transient AuditionLogger logger;
+    private final AuditionLogger logger;
 
     /**
      * Retrieves a list of posts, optionally filtered by user ID or post ID.
