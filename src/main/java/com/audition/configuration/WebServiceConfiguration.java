@@ -1,11 +1,14 @@
 package com.audition.configuration;
 
+import com.audition.common.logging.AuditionLogger;
+import com.audition.common.logging.RestTemplateLoggingInterceptor;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.text.SimpleDateFormat;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
@@ -43,7 +46,9 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public RestTemplate restTemplate(final ObjectMapper objectMapper) {
+    public RestTemplate restTemplate(final ObjectMapper objectMapper,
+        final AuditionLogger auditionLogger,
+        @Value("${audition.logging.rest-template.enabled:true}") final boolean loggingEnabled) {
         final RestTemplate restTemplate = new RestTemplate(
             new BufferingClientHttpRequestFactory(createClientFactory()));
 
@@ -55,7 +60,8 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
         jacksonConverter.setObjectMapper(objectMapper);
         restTemplate.getMessageConverters().add(jacksonConverter);
 
-        // TODO create a logging interceptor that logs request/response for rest template calls.
+        // Add logging interceptor for request/response logging
+        restTemplate.getInterceptors().add(new RestTemplateLoggingInterceptor(auditionLogger, loggingEnabled));
 
         return restTemplate;
     }

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.audition.common.logging.AuditionLogger;
+import com.audition.common.logging.RestTemplateLoggingInterceptor;
 import com.audition.configuration.WebServiceConfiguration;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -24,10 +26,12 @@ import org.springframework.web.client.RestTemplate;
 class WebServiceConfigurationTest {
 
     private WebServiceConfiguration configuration;
+    private AuditionLogger auditionLogger;
 
     @BeforeEach
     void setUp() {
         configuration = new WebServiceConfiguration();
+        auditionLogger = new AuditionLogger();
     }
 
     @Nested
@@ -87,7 +91,7 @@ class WebServiceConfigurationTest {
         @DisplayName("Creates RestTemplate with custom ObjectMapper")
         void createsRestTemplateWithCustomObjectMapper() {
             ObjectMapper customObjectMapper = configuration.objectMapper();
-            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper);
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
 
             assertNotNull(restTemplate);
             assertFalse(restTemplate.getMessageConverters().isEmpty());
@@ -97,7 +101,7 @@ class WebServiceConfigurationTest {
         @DisplayName("RestTemplate uses MappingJackson2HttpMessageConverter with custom ObjectMapper")
         void usesMappingJackson2HttpMessageConverter() {
             ObjectMapper customObjectMapper = configuration.objectMapper();
-            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper);
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
 
             boolean hasJacksonConverter = false;
             MappingJackson2HttpMessageConverter jacksonConverter = null;
@@ -119,7 +123,7 @@ class WebServiceConfigurationTest {
         @DisplayName("RestTemplate's Jackson converter has correct date format configuration")
         void jacksonConverterHasCorrectDateFormat() {
             ObjectMapper customObjectMapper = configuration.objectMapper();
-            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper);
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
 
             MappingJackson2HttpMessageConverter jacksonConverter = null;
             for (HttpMessageConverter<?> converter : restTemplate.getMessageConverters()) {
@@ -139,7 +143,7 @@ class WebServiceConfigurationTest {
         @DisplayName("RestTemplate's Jackson converter has correct property naming strategy")
         void jacksonConverterHasCorrectNamingStrategy() {
             ObjectMapper customObjectMapper = configuration.objectMapper();
-            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper);
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
 
             MappingJackson2HttpMessageConverter jacksonConverter = null;
             for (HttpMessageConverter<?> converter : restTemplate.getMessageConverters()) {
@@ -159,7 +163,7 @@ class WebServiceConfigurationTest {
         @DisplayName("RestTemplate's Jackson converter does not write dates as timestamps")
         void jacksonConverterDoesNotWriteDatesAsTimestamps() {
             ObjectMapper customObjectMapper = configuration.objectMapper();
-            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper);
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
 
             MappingJackson2HttpMessageConverter jacksonConverter = null;
             for (HttpMessageConverter<?> converter : restTemplate.getMessageConverters()) {
@@ -174,5 +178,37 @@ class WebServiceConfigurationTest {
             assertFalse(objectMapper.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
         }
     }
-}
 
+    @Nested
+    @DisplayName("restTemplate interceptor")
+    class RestTemplateInterceptorTests {
+
+        @Test
+        @DisplayName("RestTemplate has exactly one interceptor when logging is enabled")
+        void hasOneInterceptorWhenEnabled() {
+            ObjectMapper customObjectMapper = configuration.objectMapper();
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
+
+            assertEquals(1, restTemplate.getInterceptors().size());
+        }
+
+        @Test
+        @DisplayName("RestTemplate interceptor is RestTemplateLoggingInterceptor")
+        void interceptorIsRestTemplateLoggingInterceptor() {
+            ObjectMapper customObjectMapper = configuration.objectMapper();
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, true);
+
+            assertTrue(restTemplate.getInterceptors().get(0) instanceof RestTemplateLoggingInterceptor);
+        }
+
+        @Test
+        @DisplayName("RestTemplate has interceptor even when logging is disabled")
+        void hasInterceptorWhenDisabled() {
+            ObjectMapper customObjectMapper = configuration.objectMapper();
+            RestTemplate restTemplate = configuration.restTemplate(customObjectMapper, auditionLogger, false);
+
+            assertEquals(1, restTemplate.getInterceptors().size());
+            assertTrue(restTemplate.getInterceptors().get(0) instanceof RestTemplateLoggingInterceptor);
+        }
+    }
+}

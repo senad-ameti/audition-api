@@ -13,7 +13,14 @@ application:
     connect-timeout: 5000
     response-timeout: 5000
 
+logging:
+  level:
+    com.audition.common.logging.RestTemplateLoggingInterceptor: DEBUG
+
 audition:
+  logging:
+    rest-template:
+      enabled: true
   cache:
     enabled: false
   integration:

@@ -452,6 +452,87 @@ class AuditionLoggerTest {
             verify(mockLogger, never()).error(anyString(), eq(exception));
         }
     }
+
+    @Nested
+    @DisplayName("Cache Logging Tests")
+    class CacheLoggingTests {
+
+        @Test
+        @DisplayName("logCacheHit should log cache hit at debug level")
+        void logCacheHitShouldLogAtDebugLevel() {
+            // Arrange
+            when(mockLogger.isDebugEnabled()).thenReturn(true);
+
+            // Act
+            auditionLogger.logCacheHit(mockLogger, "posts", "all");
+
+            // Assert
+            verify(mockLogger).debug("Cache HIT - Cache: {} | Key: {}", "posts", "all");
+        }
+
+        @Test
+        @DisplayName("logCacheHit should not log when debug is disabled")
+        void logCacheHitShouldNotLogWhenDisabled() {
+            // Arrange
+            when(mockLogger.isDebugEnabled()).thenReturn(false);
+
+            // Act
+            auditionLogger.logCacheHit(mockLogger, "posts", "all");
+
+            // Assert
+            verify(mockLogger, never()).debug(anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("logCacheMiss should log cache miss at debug level")
+        void logCacheMissShouldLogAtDebugLevel() {
+            // Arrange
+            when(mockLogger.isDebugEnabled()).thenReturn(true);
+
+            // Act
+            auditionLogger.logCacheMiss(mockLogger, "postsById", "123");
+
+            // Assert
+            verify(mockLogger).debug("Cache MISS - Cache: {} | Key: {}", "postsById", "123");
+        }
+
+        @Test
+        @DisplayName("logCacheMiss should not log when debug is disabled")
+        void logCacheMissShouldNotLogWhenDisabled() {
+            // Arrange
+            when(mockLogger.isDebugEnabled()).thenReturn(false);
+
+            // Act
+            auditionLogger.logCacheMiss(mockLogger, "postsById", "123");
+
+            // Assert
+            verify(mockLogger, never()).debug(anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("logCacheHit should handle numeric key")
+        void logCacheHitShouldHandleNumericKey() {
+            // Arrange
+            when(mockLogger.isDebugEnabled()).thenReturn(true);
+
+            // Act
+            auditionLogger.logCacheHit(mockLogger, "postsById", 42);
+
+            // Assert
+            verify(mockLogger).debug("Cache HIT - Cache: {} | Key: {}", "postsById", 42);
+        }
+
+        @Test
+        @DisplayName("logCacheMiss should handle numeric key")
+        void logCacheMissShouldHandleNumericKey() {
+            // Arrange
+            when(mockLogger.isDebugEnabled()).thenReturn(true);
+
+            // Act
+            auditionLogger.logCacheMiss(mockLogger, "comments", 99);
+
+            // Assert
+            verify(mockLogger).debug("Cache MISS - Cache: {} | Key: {}", "comments", 99);
+        }
+    }
 }
-
-

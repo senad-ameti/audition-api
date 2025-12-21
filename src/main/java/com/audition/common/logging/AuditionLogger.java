@@ -155,4 +155,30 @@ public class AuditionLogger {
         final String msgStr = StringUtils.isNotBlank(message) ? message : "No message provided";
         return "Error Code: " + codeStr + " | Message: " + msgStr;
     }
+
+    /**
+     * Logs a cache hit at debug level.
+     *
+     * @param logger    the SLF4J logger to use for logging
+     * @param cacheName the name of the cache
+     * @param key       the cache key
+     */
+    public void logCacheHit(final Logger logger, final String cacheName, final Object key) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Cache HIT - Cache: {} | Key: {}", cacheName, key);
+        }
+    }
+
+    /**
+     * Logs a cache miss at debug level.
+     *
+     * @param logger    the SLF4J logger to use for logging
+     * @param cacheName the name of the cache
+     * @param key       the cache key
+     */
+    public void logCacheMiss(final Logger logger, final String cacheName, final Object key) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Cache MISS - Cache: {} | Key: {}", cacheName, key);
+        }
+    }
 }

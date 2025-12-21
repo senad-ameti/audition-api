@@ -30,8 +30,13 @@ management:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    com.audition.common.logging.RestTemplateLoggingInterceptor: INFO
 
 audition:
+  logging:
+    rest-template:
+      enabled: false
   integration:
     posts-url: https://jsonplaceholder.typicode.com/posts
     posts-by-id-url: https://jsonplaceholder.typicode.com/posts/{id}

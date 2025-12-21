@@ -62,6 +62,7 @@ public class AuditionIntegrationClient {
      */
     @Cacheable(value = "posts", unless = "#result == null || #result.isEmpty()")
     public List<AuditionPost> getPosts() {
+        logger.logCacheMiss(LOG, "posts", "all");
         AuditionPost[] posts;
         try {
             posts = Optional.ofNullable(restTemplate.getForObject(postsUrl, AuditionPost[].class))
@@ -86,6 +87,7 @@ public class AuditionIntegrationClient {
      */
     @Cacheable(value = "postsById", key = "#id", unless = "#result == null")
     public AuditionPost getPostById(final String id) {
+        logger.logCacheMiss(LOG, "postsById", id);
         try {
             return restTemplate.getForObject(postsByIdUrl, AuditionPost.class, id);
         } catch (final HttpClientErrorException e) {
@@ -110,6 +112,7 @@ public class AuditionIntegrationClient {
      */
     @Cacheable(value = "postWithComments", key = "#postId", unless = "#result == null")
     public AuditionPost getPostWithComments(final String postId) {
+        logger.logCacheMiss(LOG, "postWithComments", postId);
         AuditionPost post = getPostById(postId);
         List<Comment> comments = getCommentsForPost(postId);
         post.setComments(comments);
@@ -127,6 +130,7 @@ public class AuditionIntegrationClient {
      */
     @Cacheable(value = "comments", key = "#postId", unless = "#result == null || #result.isEmpty()")
     public List<Comment> getCommentsForPost(final String postId) {
+        logger.logCacheMiss(LOG, "comments", postId);
         try {
             Comment[] comments = Optional.ofNullable(
                     restTemplate.getForObject(postCommentsUrl, Comment[].class, postId))
