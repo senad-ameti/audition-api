@@ -236,7 +236,7 @@ class ExceptionControllerAdviceTest {
             assertEquals(400, result.getStatus());
             assertEquals("API Error occurred. Please contact support or administrator.", result.getDetail());
             assertEquals("Custom Title", result.getTitle());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -277,7 +277,7 @@ class ExceptionControllerAdviceTest {
             assertEquals(500, result.getStatus());
             assertEquals("API Error occurred. Please contact support or administrator.", result.getDetail());
             assertEquals("Custom Title", result.getTitle());
-            verify(auditionLogger).logErrorWithException(any(Logger.class), anyString(), eq(exception));
+            verify(auditionLogger).logStandardProblemDetail(any(Logger.class), any(ProblemDetail.class), eq(exception));
         }
 
         @Test
@@ -325,7 +325,7 @@ class ExceptionControllerAdviceTest {
             assertEquals(INTERNAL_SERVER_ERROR.value(), result.getStatus());
             assertEquals("API Error occurred. Please contact support or administrator.", result.getDetail());
             assertEquals("API Error Occurred", result.getTitle());
-            verify(auditionLogger).logErrorWithException(any(Logger.class), anyString(), eq(exception));
+            verify(auditionLogger).logStandardProblemDetail(any(Logger.class), any(ProblemDetail.class), eq(exception));
         }
 
         @Test
@@ -345,7 +345,7 @@ class ExceptionControllerAdviceTest {
             assertEquals(BAD_REQUEST.value(), result.getStatus());
             assertEquals("API Error occurred. Please contact support or administrator.", result.getDetail());
             assertEquals("API Error Occurred", result.getTitle());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -368,9 +368,10 @@ class ExceptionControllerAdviceTest {
 
             // Verify appropriate logging based on actual status
             if (actualStatus >= 400 && actualStatus < 500) {
-                verify(auditionLogger).warn(any(Logger.class), anyString());
+                verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
             } else if (actualStatus >= 500) {
-                verify(auditionLogger).logErrorWithException(any(Logger.class), anyString(), eq(exception));
+                verify(auditionLogger).logStandardProblemDetail(any(Logger.class), any(ProblemDetail.class),
+                    eq(exception));
             }
         }
 
@@ -391,7 +392,7 @@ class ExceptionControllerAdviceTest {
             assertEquals(INTERNAL_SERVER_ERROR.value(), result.getStatus());
             assertEquals("API Error occurred. Please contact support or administrator.", result.getDetail());
             assertEquals("API Error Occurred", result.getTitle());
-            verify(auditionLogger).logErrorWithException(any(Logger.class), anyString(), eq(exception));
+            verify(auditionLogger).logStandardProblemDetail(any(Logger.class), any(ProblemDetail.class), eq(exception));
         }
 
         @Test
@@ -431,7 +432,7 @@ class ExceptionControllerAdviceTest {
             assertEquals(INTERNAL_SERVER_ERROR.value(), result.getStatus());
             assertEquals("API Error occurred. Please contact support or administrator.", result.getDetail());
             assertEquals("API Error Occurred", result.getTitle());
-            verify(auditionLogger).logErrorWithException(any(Logger.class), anyString(), eq(exception));
+            verify(auditionLogger).logStandardProblemDetail(any(Logger.class), any(ProblemDetail.class), eq(exception));
         }
 
         @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -462,7 +463,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(405, result.getStatus()); // METHOD_NOT_ALLOWED
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -480,7 +481,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -498,7 +499,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -517,7 +518,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -535,7 +536,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -553,7 +554,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -572,7 +573,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -590,7 +591,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -609,7 +610,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -628,7 +629,7 @@ class ExceptionControllerAdviceTest {
             // Assert
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         private Exception createMethodArgumentNotValidException() {
@@ -754,7 +755,7 @@ class ExceptionControllerAdviceTest {
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
             // When message is blank, DEFAULT_MESSAGE should be logged
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test
@@ -818,7 +819,7 @@ class ExceptionControllerAdviceTest {
             assertNotNull(result);
             assertEquals(BAD_REQUEST.value(), result.getStatus());
             // When message is empty, DEFAULT_MESSAGE should be logged
-            verify(auditionLogger).warn(any(Logger.class), anyString());
+            verify(auditionLogger).logHttpStatusCodeError(any(Logger.class), anyString(), any(Integer.class));
         }
 
         @Test

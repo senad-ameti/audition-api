@@ -58,12 +58,32 @@ public class AuditionLogger {
     }
 
     private String createStandardProblemDetailMessage(final ProblemDetail standardProblemDetail) {
-        // TODO Add implementation here.
-        return StringUtils.EMPTY;
+        if (standardProblemDetail == null) {
+            return "ProblemDetail: No details available";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Status: ").append(standardProblemDetail.getStatus());
+        sb.append(" | Title: ").append(
+            StringUtils.isNotBlank(standardProblemDetail.getTitle())
+                ? standardProblemDetail.getTitle() : "No title provided");
+        sb.append(" | Detail: ").append(
+            StringUtils.isNotBlank(standardProblemDetail.getDetail())
+                ? standardProblemDetail.getDetail() : "No detail provided");
+
+        if (standardProblemDetail.getType() != null) {
+            sb.append(" | Type: ").append(standardProblemDetail.getType());
+        }
+        if (standardProblemDetail.getInstance() != null) {
+            sb.append(" | Instance: ").append(standardProblemDetail.getInstance());
+        }
+
+        return sb.toString();
     }
 
     private String createBasicErrorResponseMessage(final Integer errorCode, final String message) {
-        // TODO Add implementation here.
-        return StringUtils.EMPTY;
+        final String codeStr = errorCode != null ? String.valueOf(errorCode) : "Unknown";
+        final String msgStr = StringUtils.isNotBlank(message) ? message : "No message provided";
+        return "Error Code: " + codeStr + " | Message: " + msgStr;
     }
 }

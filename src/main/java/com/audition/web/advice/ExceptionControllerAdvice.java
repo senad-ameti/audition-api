@@ -87,8 +87,9 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     ProblemDetail handleMainException(final Exception e) {
         final HttpStatusCode status = getHttpStatusCodeFromException(e);
-        logException(e, status);
-        return createProblemDetail(e, status);
+        final ProblemDetail problemDetail = createProblemDetail(e, status);
+        logException(e, status, problemDetail);
+        return problemDetail;
 
     }
 
@@ -101,8 +102,9 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(SystemException.class)
     ProblemDetail handleSystemException(final SystemException e) {
         final HttpStatusCode status = getHttpStatusCodeFromSystemException(e);
-        logException(e, status);
-        return createProblemDetail(e, status);
+        final ProblemDetail problemDetail = createProblemDetail(e, status);
+        logException(e, status, problemDetail);
+        return problemDetail;
 
     }
 
@@ -137,18 +139,21 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Logs the exception based on the HTTP status code. Client errors are logged as warnings, server errors as errors.
+     * Logs the exception based on the HTTP status code. Client errors are logged using logHttpStatusCodeError, server
+     * errors are logged using logStandardProblemDetail.
      *
-     * @param exception the exception to log
-     * @param status    the HTTP status code
+     * @param exception     the exception to log
+     * @param status        the HTTP status code
+     * @param problemDetail the ProblemDetail object for structured logging
      */
-    private void logException(final Exception exception, final HttpStatusCode status) {
+    private void logException(final Exception exception, final HttpStatusCode status,
+        final ProblemDetail problemDetail) {
         if (status.is4xxClientError()) {
             final String detail =
                 StringUtils.isNotBlank(exception.getMessage()) ? exception.getMessage() : DEFAULT_MESSAGE;
-            logger.warn(LOG, "Handled client error with status " + status.value() + " - " + detail);
+            logger.logHttpStatusCodeError(LOG, detail, status.value());
         } else if (status.is5xxServerError()) {
-            logger.logErrorWithException(LOG, "Unhandled server error", exception);
+            logger.logStandardProblemDetail(LOG, problemDetail, exception);
         }
     }
 
