@@ -32,7 +32,7 @@ ext {
     set('springCloudVersion', springCloudVersion)
     set('logbackVersion', logbackVersion)
     set('slf4jVersion', slf4jVersion)
-    set('springdocVersion', springdocVersion)
+    set('wiremockVersion', wiremockVersion)
 }
 
 dependencies {
@@ -66,7 +66,7 @@ dependencies {
     /* Utilities */
 
     // Apache Commons Lang3 for utility methods (StringUtils, etc.)
-    implementation "org.apache.commons:commons-lang3:3.20.0"
+    implementation "org.apache.commons:commons-lang3:${commonsLang3Version}"
 
     /* Logging - Note: SLF4J and Logback are already provided by spring-boot-starter-web,
        but explicit versions ensure consistency and allow custom logback configuration */
@@ -85,7 +85,7 @@ dependencies {
     testImplementation "org.springframework.boot:spring-boot-starter-test"
 
     // WireMock for mocking external HTTP services in component tests
-    testImplementation 'org.wiremock.integrations:wiremock-spring-boot:3.2.0'
+    testImplementation "org.wiremock.integrations:wiremock-spring-boot:${wiremockVersion}"
 }
 
 dependencyManagement {
