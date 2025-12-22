@@ -2,6 +2,7 @@ package com.audition.configuration;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -17,8 +18,11 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = "audition.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class CacheConfiguration {
 
-    private static final int CACHE_TTL_MINUTES = 15;
-    private static final int CACHE_MAX_SIZE = 1000;
+    @Value("${audition.cache.ttl.minutes:15}")
+    private transient int cacheTtlMinutes;
+
+    @Value("${audition.cache.max.size:1000}")
+    private transient int cacheMaxSize;
 
     /**
      * Creates a Caffeine-based CacheManager bean with specified caches and TTL.
@@ -30,8 +34,8 @@ public class CacheConfiguration {
         final CaffeineCacheManager cacheManager = new CaffeineCacheManager("posts", "postsById", "comments",
             "postWithComments");
         cacheManager.setCaffeine(Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofMinutes(CACHE_TTL_MINUTES))
-            .maximumSize(CACHE_MAX_SIZE));
+            .expireAfterWrite(Duration.ofMinutes(cacheTtlMinutes))
+            .maximumSize(cacheMaxSize));
         return cacheManager;
     }
 }
