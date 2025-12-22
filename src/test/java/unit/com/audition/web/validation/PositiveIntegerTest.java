@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("PositiveInteger Annotation Tests")
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class PositiveIntegerTest {
 
     @Nested
@@ -30,14 +31,14 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should have @Documented annotation")
         void shouldHaveDocumentedAnnotation() {
-            Documented documented = PositiveInteger.class.getAnnotation(Documented.class);
+            final Documented documented = PositiveInteger.class.getAnnotation(Documented.class);
             assertNotNull(documented, "PositiveInteger should be annotated with @Documented");
         }
 
         @Test
         @DisplayName("should have @Constraint annotation with correct validator")
         void shouldHaveConstraintAnnotationWithCorrectValidator() {
-            Constraint constraint = PositiveInteger.class.getAnnotation(Constraint.class);
+            final Constraint constraint = PositiveInteger.class.getAnnotation(Constraint.class);
             assertNotNull(constraint, "PositiveInteger should be annotated with @Constraint");
             assertArrayEquals(
                 new Class[]{PositiveIntegerValidator.class},
@@ -49,9 +50,9 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should have @Target annotation for PARAMETER and FIELD")
         void shouldHaveTargetAnnotationForParameterAndField() {
-            Target target = PositiveInteger.class.getAnnotation(Target.class);
+            final Target target = PositiveInteger.class.getAnnotation(Target.class);
             assertNotNull(target, "PositiveInteger should be annotated with @Target");
-            ElementType[] elementTypes = target.value();
+            final ElementType[] elementTypes = target.value();
             assertEquals(2, elementTypes.length, "Should target 2 element types");
             assertTrue(
                 containsElementType(elementTypes, ElementType.PARAMETER),
@@ -66,7 +67,7 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should have @Retention annotation with RUNTIME policy")
         void shouldHaveRetentionAnnotationWithRuntimePolicy() {
-            Retention retention = PositiveInteger.class.getAnnotation(Retention.class);
+            final Retention retention = PositiveInteger.class.getAnnotation(Retention.class);
             assertNotNull(retention, "PositiveInteger should be annotated with @Retention");
             assertEquals(
                 RetentionPolicy.RUNTIME,
@@ -75,8 +76,8 @@ class PositiveIntegerTest {
             );
         }
 
-        private boolean containsElementType(ElementType[] types, ElementType target) {
-            for (ElementType type : types) {
+        private boolean containsElementType(final ElementType[] types, final ElementType target) {
+            for (final ElementType type : types) {
                 if (type == target) {
                     return true;
                 }
@@ -92,16 +93,16 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should have default message")
         void shouldHaveDefaultMessage() throws NoSuchMethodException {
-            Method messageMethod = PositiveInteger.class.getMethod("message");
-            Object defaultValue = messageMethod.getDefaultValue();
+            final Method messageMethod = PositiveInteger.class.getMethod("message");
+            final Object defaultValue = messageMethod.getDefaultValue();
             assertEquals("must be a positive integer", defaultValue, "Default message should match");
         }
 
         @Test
         @DisplayName("should have empty groups as default")
         void shouldHaveEmptyGroupsAsDefault() throws NoSuchMethodException {
-            Method groupsMethod = PositiveInteger.class.getMethod("groups");
-            Object defaultValue = groupsMethod.getDefaultValue();
+            final Method groupsMethod = PositiveInteger.class.getMethod("groups");
+            final Object defaultValue = groupsMethod.getDefaultValue();
             assertNotNull(defaultValue);
             assertInstanceOf(Class[].class, defaultValue, "groups should return Class array");
             assertEquals(0, ((Class<?>[]) defaultValue).length, "groups should be empty by default");
@@ -110,8 +111,8 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should have empty payload as default")
         void shouldHaveEmptyPayloadAsDefault() throws NoSuchMethodException {
-            Method payloadMethod = PositiveInteger.class.getMethod("payload");
-            Object defaultValue = payloadMethod.getDefaultValue();
+            final Method payloadMethod = PositiveInteger.class.getMethod("payload");
+            final Object defaultValue = payloadMethod.getDefaultValue();
             assertNotNull(defaultValue);
             assertInstanceOf(Class[].class, defaultValue, "payload should return Class array");
             assertEquals(0, ((Class<?>[]) defaultValue).length, "payload should be empty by default");
@@ -120,17 +121,17 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should have default fieldName of 'Value'")
         void shouldHaveDefaultFieldName() throws NoSuchMethodException {
-            Method fieldNameMethod = PositiveInteger.class.getMethod("fieldName");
-            Object defaultValue = fieldNameMethod.getDefaultValue();
+            final Method fieldNameMethod = PositiveInteger.class.getMethod("fieldName");
+            final Object defaultValue = fieldNameMethod.getDefaultValue();
             assertEquals("Value", defaultValue, "Default fieldName should be 'Value'");
         }
 
         @Test
         @DisplayName("should have default optional value of false")
         void shouldHaveDefaultOptionalFalse() throws NoSuchMethodException {
-            Method optionalMethod = PositiveInteger.class.getMethod("optional");
-            Object defaultValue = optionalMethod.getDefaultValue();
-            assertEquals(false, defaultValue, "Default optional should be false");
+            final Method optionalMethod = PositiveInteger.class.getMethod("optional");
+            final Object defaultValue = optionalMethod.getDefaultValue();
+            assertEquals(Boolean.FALSE, defaultValue, "Default optional should be false");
         }
     }
 
@@ -145,7 +146,7 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should be applicable to fields")
         void shouldBeApplicableToFields() throws NoSuchFieldException {
-            PositiveInteger annotation = AnnotationApplicationTests.class
+            final PositiveInteger annotation = AnnotationApplicationTests.class
                 .getDeclaredField("annotatedField")
                 .getAnnotation(PositiveInteger.class);
             assertNotNull(annotation, "Field should have @PositiveInteger annotation");
@@ -155,7 +156,7 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should be applicable to parameters")
         void shouldBeApplicableToParameters() throws NoSuchMethodException {
-            Annotation[][] parameterAnnotations = AnnotationApplicationTests.class
+            final Annotation[][] parameterAnnotations = AnnotationApplicationTests.class
                 .getDeclaredMethod("methodWithAnnotatedParameter", String.class)
                 .getParameterAnnotations();
             assertEquals(1, parameterAnnotations.length);
@@ -164,7 +165,7 @@ class PositiveIntegerTest {
         }
 
         @SuppressWarnings("unused")
-        void methodWithAnnotatedParameter(@PositiveInteger String value) {
+        void methodWithAnnotatedParameter(@PositiveInteger final String value) {
             // Method for testing parameter annotation
         }
     }
@@ -188,7 +189,7 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should support custom message")
         void shouldSupportCustomMessage() throws NoSuchFieldException {
-            PositiveInteger annotation = CustomMessageTests.class
+            final PositiveInteger annotation = CustomMessageTests.class
                 .getDeclaredField("fieldWithCustomMessage")
                 .getAnnotation(PositiveInteger.class);
             assertEquals("Custom error message", annotation.message());
@@ -197,7 +198,7 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should support custom fieldName")
         void shouldSupportCustomFieldName() throws NoSuchFieldException {
-            PositiveInteger annotation = CustomMessageTests.class
+            final PositiveInteger annotation = CustomMessageTests.class
                 .getDeclaredField("fieldWithCustomFieldName")
                 .getAnnotation(PositiveInteger.class);
             assertEquals("User ID", annotation.fieldName());
@@ -206,10 +207,10 @@ class PositiveIntegerTest {
         @Test
         @DisplayName("should support optional=true")
         void shouldSupportOptionalTrue() throws NoSuchFieldException {
-            PositiveInteger annotation = CustomMessageTests.class
+            final PositiveInteger annotation = CustomMessageTests.class
                 .getDeclaredField("fieldWithOptionalTrue")
                 .getAnnotation(PositiveInteger.class);
-            assertEquals(true, annotation.optional());
+            assertTrue(annotation.optional());
         }
     }
 }

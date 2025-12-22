@@ -44,16 +44,18 @@ import org.wiremock.spring.InjectWireMock;
 @MockitoSettings(strictness = Strictness.LENIENT)
 @EnableWireMock
 @DisplayName("AuditionIntegrationClient Component Tests")
+@SuppressWarnings({"PMD.ExcessiveImports", "PMD.AvoidDuplicateLiterals", "PMD.LocalVariableCouldBeFinal",
+    "PMD.DataflowAnomalyAnalysis"})
 class AuditionIntegrationClientTest {
 
     @InjectWireMock
-    private WireMockServer wireMockServer;
+    private transient WireMockServer wireMockServer;
 
     @Autowired
-    private AuditionIntegrationClient auditionIntegrationClient;
+    private transient AuditionIntegrationClient auditionIntegrationClient;
 
     @SpyBean
-    private AuditionLogger auditionLogger;
+    private transient AuditionLogger auditionLogger;
 
     // caching is disabled by default for tests; cache-specific behavior lives in its own test class
     // (AuditionIntegrationClientCacheBehaviorTest)

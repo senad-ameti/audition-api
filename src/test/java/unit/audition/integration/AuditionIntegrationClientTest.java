@@ -31,6 +31,7 @@ import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuditionIntegrationClient Unit Tests")
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class AuditionIntegrationClientTest {
 
     private static final String POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
@@ -38,12 +39,12 @@ class AuditionIntegrationClientTest {
     private static final String POST_COMMENTS_URL = "https://jsonplaceholder.typicode.com/posts/{postId}/comments";
 
     @Mock
-    private RestTemplate restTemplate;
+    private transient RestTemplate restTemplate;
 
     @Mock
-    private AuditionLogger auditionLogger;
+    private transient AuditionLogger auditionLogger;
 
-    private AuditionIntegrationClient client;
+    private transient AuditionIntegrationClient client;
 
     @BeforeEach
     void setUp() {
@@ -58,12 +59,12 @@ class AuditionIntegrationClientTest {
         @Test
         @DisplayName("Returns posts when upstream provides data")
         void returnsPosts() {
-            AuditionPost first = buildPost(1, 11, "test-title-1", "body-1");
-            AuditionPost second = buildPost(2, 12, "test-title-2", "body-2");
+            final AuditionPost first = buildPost(1, 11, "test-title-1", "body-1");
+            final AuditionPost second = buildPost(2, 12, "test-title-2", "body-2");
             when(restTemplate.getForObject(POSTS_URL, AuditionPost[].class)).thenReturn(
                 new AuditionPost[]{first, second});
 
-            List<AuditionPost> result = client.getPosts();
+            final List<AuditionPost> result = client.getPosts();
 
             assertEquals(2, result.size());
             assertEquals(11, result.get(0).getUserId());
@@ -77,7 +78,7 @@ class AuditionIntegrationClientTest {
         void handlesEmptyResponse() {
             when(restTemplate.getForObject(POSTS_URL, AuditionPost[].class)).thenReturn(null);
 
-            List<AuditionPost> result = client.getPosts();
+            final List<AuditionPost> result = client.getPosts();
 
             assertTrue(result.isEmpty());
             verify(auditionLogger).debug(any(Logger.class), eq("No posts found from external API"));
@@ -86,12 +87,12 @@ class AuditionIntegrationClientTest {
         @Test
         @DisplayName("Wraps HttpClientErrorException into SystemException preserving error details")
         void handlesHttpClientError() {
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
                 "Bad Request");
             when(restTemplate.getForObject(POSTS_URL, AuditionPost[].class))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class, () -> client.getPosts());
+            final SystemException exception = assertThrows(SystemException.class, () -> client.getPosts());
 
             assertTrue(exception.getMessage().contains("400"));
             assertEquals("External API Error", exception.getTitle());
@@ -109,10 +110,10 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns post when upstream provides data for given id")
         void returnsPost() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
 
-            AuditionPost result = client.getPostById(postId);
+            final AuditionPost result = client.getPostById(postId);
 
             assertEquals(1, result.getId());
             assertEquals(10, result.getUserId());
@@ -127,7 +128,7 @@ class AuditionIntegrationClientTest {
             final String postId = "99";
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(null);
 
-            AuditionPost result = client.getPostById(postId);
+            final AuditionPost result = client.getPostById(postId);
 
             assertNull(result);
             verify(restTemplate).getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId);
@@ -140,7 +141,7 @@ class AuditionIntegrationClientTest {
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
 
-            SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
+            final SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
             assertEquals("Cannot find a Post with id " + postId, exception.getMessage());
             assertEquals("Resource Not Found", exception.getTitle());
@@ -151,12 +152,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for non-404 client errors")
         void throwsSystemExceptionForOtherClientErrors() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
                 "Bad Request");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
+            final SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
             assertTrue(exception.getMessage().contains("400"));
             assertEquals("External API Error", exception.getTitle());
@@ -168,12 +169,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for forbidden access error")
         void throwsSystemExceptionForForbiddenError() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
                 "Forbidden");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
+            final SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
             assertTrue(exception.getMessage().contains("403"));
             assertEquals("External API Error", exception.getTitle());
@@ -185,12 +186,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for unauthorized access error")
         void throwsSystemExceptionForUnauthorizedError() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
                 "Unauthorized");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
+            final SystemException exception = assertThrows(SystemException.class, () -> client.getPostById(postId));
 
             assertTrue(exception.getMessage().contains("401"));
             assertEquals("External API Error", exception.getTitle());
@@ -202,11 +203,11 @@ class AuditionIntegrationClientTest {
         @DisplayName("Handles post with all fields populated correctly")
         void handlesCompletePostData() {
             final String postId = "5";
-            AuditionPost expectedPost = buildPost(5, 100, "Complete Title with Special Characters !@#$%",
+            final AuditionPost expectedPost = buildPost(5, 100, "Complete Title with Special Characters !@#$%",
                 "Long body content\nwith newlines\nand special chars: éàü");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
 
-            AuditionPost result = client.getPostById(postId);
+            final AuditionPost result = client.getPostById(postId);
 
             assertEquals(5, result.getId());
             assertEquals(100, result.getUserId());
@@ -223,15 +224,15 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns post with comments when both post and comments exist")
         void returnsPostWithComments() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
-            Comment comment1 = buildComment(1, 1, "comment-name-1", "email1@test.com", "comment-body-1");
-            Comment comment2 = buildComment(1, 2, "comment-name-2", "email2@test.com", "comment-body-2");
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final Comment comment1 = buildComment(1, 1, "comment-name-1", "email1@test.com", "comment-body-1");
+            final Comment comment2 = buildComment(1, 2, "comment-name-2", "email2@test.com", "comment-body-2");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[]{comment1, comment2});
 
-            AuditionPost result = client.getPostWithComments(postId);
+            final AuditionPost result = client.getPostWithComments(postId);
 
             assertEquals(1, result.getId());
             assertEquals("test-title", result.getTitle());
@@ -244,13 +245,13 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns post with empty comments list when no comments exist")
         void returnsPostWithEmptyComments() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[0]);
 
-            AuditionPost result = client.getPostWithComments(postId);
+            final AuditionPost result = client.getPostWithComments(postId);
 
             assertEquals(1, result.getId());
             assertTrue(result.getComments().isEmpty());
@@ -261,12 +262,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns post with empty comments list when comments response is null")
         void returnsPostWithEmptyCommentsWhenNull() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId)).thenReturn(null);
 
-            AuditionPost result = client.getPostWithComments(postId);
+            final AuditionPost result = client.getPostWithComments(postId);
 
             assertEquals(1, result.getId());
             assertTrue(result.getComments().isEmpty());
@@ -280,7 +281,7 @@ class AuditionIntegrationClientTest {
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
             assertEquals("Cannot find a Post with id " + postId, exception.getMessage());
@@ -292,13 +293,13 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException with 404 status when comments endpoint returns not found")
         void throwsNotFoundExceptionWhenCommentsNotFound() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
             assertEquals("Cannot find comments for Post with id " + postId, exception.getMessage());
@@ -310,15 +311,15 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for bad request error when fetching comments")
         void throwsSystemExceptionForBadRequestOnComments() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
                 "Bad Request");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
             assertTrue(exception.getMessage().contains("400"));
@@ -331,12 +332,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for unauthorized error when fetching post")
         void throwsSystemExceptionForUnauthorizedOnPost() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
                 "Unauthorized");
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
             assertTrue(exception.getMessage().contains("401"));
@@ -349,15 +350,15 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for forbidden error when fetching comments")
         void throwsSystemExceptionForForbiddenOnComments() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
                 "Forbidden");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getPostWithComments(postId));
 
             assertTrue(exception.getMessage().contains("403"));
@@ -370,15 +371,15 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns post with comments containing special characters")
         void handlesCommentsWithSpecialCharacters() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
-            Comment comment = buildComment(1, 1, "Special <name> & 'quotes'",
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final Comment comment = buildComment(1, 1, "Special <name> & 'quotes'",
                 "test@émail.com", "Body with unicode: éàü\nand newlines");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[]{comment});
 
-            AuditionPost result = client.getPostWithComments(postId);
+            final AuditionPost result = client.getPostWithComments(postId);
 
             assertEquals(1, result.getComments().size());
             assertEquals("Special <name> & 'quotes'", result.getComments().get(0).getName());
@@ -390,16 +391,16 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns post with multiple comments correctly ordered")
         void handlesMultipleCommentsInOrder() {
             final String postId = "1";
-            AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
-            Comment comment1 = buildComment(1, 1, "First", "first@test.com", "First body");
-            Comment comment2 = buildComment(1, 2, "Second", "second@test.com", "Second body");
-            Comment comment3 = buildComment(1, 3, "Third", "third@test.com", "Third body");
+            final AuditionPost expectedPost = buildPost(1, 10, "test-title", "test-body");
+            final Comment comment1 = buildComment(1, 1, "First", "first@test.com", "First body");
+            final Comment comment2 = buildComment(1, 2, "Second", "second@test.com", "Second body");
+            final Comment comment3 = buildComment(1, 3, "Third", "third@test.com", "Third body");
 
             when(restTemplate.getForObject(POSTS_BY_ID_URL, AuditionPost.class, postId)).thenReturn(expectedPost);
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[]{comment1, comment2, comment3});
 
-            AuditionPost result = client.getPostWithComments(postId);
+            final AuditionPost result = client.getPostWithComments(postId);
 
             assertEquals(3, result.getComments().size());
             assertEquals(1, result.getComments().get(0).getId());
@@ -416,13 +417,13 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns comments when upstream provides data for given post id")
         void returnsComments() {
             final String postId = "1";
-            Comment comment1 = buildComment(1, 1, "comment-name-1", "email1@test.com", "comment-body-1");
-            Comment comment2 = buildComment(1, 2, "comment-name-2", "email2@test.com", "comment-body-2");
+            final Comment comment1 = buildComment(1, 1, "comment-name-1", "email1@test.com", "comment-body-1");
+            final Comment comment2 = buildComment(1, 2, "comment-name-2", "email2@test.com", "comment-body-2");
 
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[]{comment1, comment2});
 
-            List<Comment> result = client.getCommentsForPost(postId);
+            final List<Comment> result = client.getCommentsForPost(postId);
 
             assertEquals(2, result.size());
             assertEquals("comment-name-1", result.get(0).getName());
@@ -437,7 +438,7 @@ class AuditionIntegrationClientTest {
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[0]);
 
-            List<Comment> result = client.getCommentsForPost(postId);
+            final List<Comment> result = client.getCommentsForPost(postId);
 
             assertTrue(result.isEmpty());
             verify(auditionLogger).debug(any(Logger.class), eq("No comments found for post with id " + postId));
@@ -449,7 +450,7 @@ class AuditionIntegrationClientTest {
             final String postId = "1";
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId)).thenReturn(null);
 
-            List<Comment> result = client.getCommentsForPost(postId);
+            final List<Comment> result = client.getCommentsForPost(postId);
 
             assertTrue(result.isEmpty());
             verify(auditionLogger).debug(any(Logger.class), eq("No comments found for post with id " + postId));
@@ -462,7 +463,7 @@ class AuditionIntegrationClientTest {
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Found"));
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
             assertEquals("Cannot find comments for Post with id " + postId, exception.getMessage());
@@ -474,12 +475,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for bad request error")
         void throwsSystemExceptionForBadRequest() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.BAD_REQUEST,
                 "Bad Request");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
             assertTrue(exception.getMessage().contains("400"));
@@ -492,12 +493,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for unauthorized error")
         void throwsSystemExceptionForUnauthorized() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
                 "Unauthorized");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
             assertTrue(exception.getMessage().contains("401"));
@@ -510,12 +511,12 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for forbidden error")
         void throwsSystemExceptionForForbidden() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
+            final HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.FORBIDDEN,
                 "Forbidden");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
             assertTrue(exception.getMessage().contains("403"));
@@ -528,13 +529,13 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns comments with special characters correctly")
         void handlesCommentsWithSpecialCharacters() {
             final String postId = "1";
-            Comment comment = buildComment(1, 1, "Special <name> & 'quotes'",
+            final Comment comment = buildComment(1, 1, "Special <name> & 'quotes'",
                 "test@émail.com", "Body with unicode: éàü\nand newlines");
 
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[]{comment});
 
-            List<Comment> result = client.getCommentsForPost(postId);
+            final List<Comment> result = client.getCommentsForPost(postId);
 
             assertEquals(1, result.size());
             assertEquals("Special <name> & 'quotes'", result.get(0).getName());
@@ -546,14 +547,14 @@ class AuditionIntegrationClientTest {
         @DisplayName("Returns multiple comments in correct order")
         void handlesMultipleCommentsInOrder() {
             final String postId = "1";
-            Comment comment1 = buildComment(1, 1, "First", "first@test.com", "First body");
-            Comment comment2 = buildComment(1, 2, "Second", "second@test.com", "Second body");
-            Comment comment3 = buildComment(1, 3, "Third", "third@test.com", "Third body");
+            final Comment comment1 = buildComment(1, 1, "First", "first@test.com", "First body");
+            final Comment comment2 = buildComment(1, 2, "Second", "second@test.com", "Second body");
+            final Comment comment3 = buildComment(1, 3, "Third", "third@test.com", "Third body");
 
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenReturn(new Comment[]{comment1, comment2, comment3});
 
-            List<Comment> result = client.getCommentsForPost(postId);
+            final List<Comment> result = client.getCommentsForPost(postId);
 
             assertEquals(3, result.size());
             assertEquals(1, result.get(0).getId());
@@ -565,12 +566,13 @@ class AuditionIntegrationClientTest {
         @DisplayName("Throws SystemException preserving error details for internal server error")
         void throwsSystemExceptionForServerError() {
             final String postId = "1";
-            HttpClientErrorException originalException = new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+            final HttpClientErrorException originalException = new HttpClientErrorException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
                 "Server Error");
             when(restTemplate.getForObject(POST_COMMENTS_URL, Comment[].class, postId))
                 .thenThrow(originalException);
 
-            SystemException exception = assertThrows(SystemException.class,
+            final SystemException exception = assertThrows(SystemException.class,
                 () -> client.getCommentsForPost(postId));
 
             assertTrue(exception.getMessage().contains("500"));
@@ -581,7 +583,7 @@ class AuditionIntegrationClientTest {
     }
 
     private AuditionPost buildPost(final int id, final int userId, final String title, final String body) {
-        AuditionPost post = new AuditionPost();
+        final AuditionPost post = new AuditionPost();
         post.setId(id);
         post.setUserId(userId);
         post.setTitle(title);
@@ -591,7 +593,7 @@ class AuditionIntegrationClientTest {
 
     private Comment buildComment(final int postId, final int id, final String name,
         final String email, final String body) {
-        Comment comment = new Comment();
+        final Comment comment = new Comment();
         comment.setPostId(postId);
         comment.setId(id);
         comment.setName(name);

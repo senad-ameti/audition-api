@@ -21,9 +21,12 @@ import org.mockito.ArgumentCaptor;
 @DisplayName("ResponseHeaderInjector Unit Tests")
 class ResponseHeaderInjectorTest {
 
-    private HttpServletRequest request;
-    private HttpServletResponse response;
-    private FilterChain filterChain;
+    private static final String X_TRACE_ID = "X-Trace-Id";
+    private static final String X_SPAN_ID = "X-Span-Id";
+
+    private transient HttpServletRequest request;
+    private transient HttpServletResponse response;
+    private transient FilterChain filterChain;
 
     @BeforeEach
     void setUp() {
@@ -41,12 +44,12 @@ class ResponseHeaderInjectorTest {
         @DisplayName("generates and injects trace and span IDs into response headers with default header names")
         void injectsTraceAndSpanIds() throws Exception {
             final ResponseHeaderInjector filter = new ResponseHeaderInjector(
-                true, "X-Trace-Id", "X-Span-Id");
+                true, X_TRACE_ID, X_SPAN_ID);
 
             filter.doFilter(request, response, filterChain);
 
-            ArgumentCaptor<String> headerNameCaptor = ArgumentCaptor.forClass(String.class);
-            ArgumentCaptor<String> headerValueCaptor = ArgumentCaptor.forClass(String.class);
+            final ArgumentCaptor<String> headerNameCaptor = ArgumentCaptor.forClass(String.class);
+            final ArgumentCaptor<String> headerValueCaptor = ArgumentCaptor.forClass(String.class);
 
             verify(response, org.mockito.Mockito.times(2))
                 .setHeader(headerNameCaptor.capture(), headerValueCaptor.capture());
@@ -56,8 +59,8 @@ class ResponseHeaderInjectorTest {
             final var headerValues = headerValueCaptor.getAllValues();
 
             assertEquals(2, headerNames.size());
-            assertEquals("X-Trace-Id", headerNames.get(0));
-            assertEquals("X-Span-Id", headerNames.get(1));
+            assertEquals(X_TRACE_ID, headerNames.get(0));
+            assertEquals(X_SPAN_ID, headerNames.get(1));
 
             // Verify trace ID is 32 hex characters
             assertEquals(32, headerValues.get(0).length());
@@ -76,7 +79,7 @@ class ResponseHeaderInjectorTest {
 
             filter.doFilter(request, response, filterChain);
 
-            ArgumentCaptor<String> headerNameCaptor = ArgumentCaptor.forClass(String.class);
+            final ArgumentCaptor<String> headerNameCaptor = ArgumentCaptor.forClass(String.class);
             verify(response, org.mockito.Mockito.times(2))
                 .setHeader(headerNameCaptor.capture(), org.mockito.ArgumentMatchers.anyString());
 
@@ -89,7 +92,7 @@ class ResponseHeaderInjectorTest {
         @DisplayName("generates unique trace IDs for different requests")
         void generatesUniqueTraceIds() throws Exception {
             final ResponseHeaderInjector filter = new ResponseHeaderInjector(
-                true, "X-Trace-Id", "X-Span-Id");
+                true, X_TRACE_ID, X_SPAN_ID);
 
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
@@ -108,8 +111,8 @@ class ResponseHeaderInjectorTest {
             // Second request
             filter.doFilter(request2, response2, chain2);
 
-            ArgumentCaptor<String> captor1 = ArgumentCaptor.forClass(String.class);
-            ArgumentCaptor<String> captor2 = ArgumentCaptor.forClass(String.class);
+            final ArgumentCaptor<String> captor1 = ArgumentCaptor.forClass(String.class);
+            final ArgumentCaptor<String> captor2 = ArgumentCaptor.forClass(String.class);
 
             verify(response1, org.mockito.Mockito.times(2))
                 .setHeader(org.mockito.ArgumentMatchers.anyString(), captor1.capture());
@@ -130,7 +133,7 @@ class ResponseHeaderInjectorTest {
         @DisplayName("stores trace IDs in MDC for logging and cleans up after")
         void storesIdsInMDC() throws Exception {
             final ResponseHeaderInjector filter = new ResponseHeaderInjector(
-                true, "X-Trace-Id", "X-Span-Id");
+                true, X_TRACE_ID, X_SPAN_ID);
 
             // Clear MDC before test
             org.slf4j.MDC.clear();
@@ -153,7 +156,7 @@ class ResponseHeaderInjectorTest {
         @DisplayName("does not inject any headers")
         void doesNotInjectHeaders() throws Exception {
             final ResponseHeaderInjector filter = new ResponseHeaderInjector(
-                false, "X-Trace-Id", "X-Span-Id");
+                false, X_TRACE_ID, X_SPAN_ID);
 
             filter.doFilter(request, response, filterChain);
 
@@ -173,10 +176,10 @@ class ResponseHeaderInjectorTest {
         @DisplayName("does not inject headers when request is not HttpServletRequest")
         void doesNotInjectHeadersForNonHttpRequest() throws Exception {
             final ResponseHeaderInjector filter = new ResponseHeaderInjector(
-                true, "X-Trace-Id", "X-Span-Id");
+                true, X_TRACE_ID, X_SPAN_ID);
 
-            jakarta.servlet.ServletRequest nonHttpRequest = mock(jakarta.servlet.ServletRequest.class);
-            jakarta.servlet.ServletResponse nonHttpResponse = mock(jakarta.servlet.ServletResponse.class);
+            final jakarta.servlet.ServletRequest nonHttpRequest = mock(jakarta.servlet.ServletRequest.class);
+            final jakarta.servlet.ServletResponse nonHttpResponse = mock(jakarta.servlet.ServletResponse.class);
 
             filter.doFilter(nonHttpRequest, nonHttpResponse, filterChain);
 
@@ -191,9 +194,9 @@ class ResponseHeaderInjectorTest {
         @DisplayName("does not inject headers when response is not HttpServletResponse")
         void doesNotInjectHeadersForNonHttpResponse() throws Exception {
             final ResponseHeaderInjector filter = new ResponseHeaderInjector(
-                true, "X-Trace-Id", "X-Span-Id");
+                true, X_TRACE_ID, X_SPAN_ID);
 
-            jakarta.servlet.ServletResponse nonHttpResponse = mock(jakarta.servlet.ServletResponse.class);
+            final jakarta.servlet.ServletResponse nonHttpResponse = mock(jakarta.servlet.ServletResponse.class);
 
             filter.doFilter(request, nonHttpResponse, filterChain);
 

@@ -31,23 +31,25 @@ import org.wiremock.spring.InjectWireMock;
 @TestPropertySource(properties = {"audition.cache.enabled=true"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("AuditionIntegrationClient Cache Behavior Tests")
-public class AuditionIntegrationClientCacheBehaviorTest {
+@SuppressWarnings({"PMD.JUnit5TestShouldBePackagePrivate", "PMD.AvoidDuplicateLiterals",
+    "PMD.JUnitTestContainsTooManyAsserts"})
+class AuditionIntegrationClientCacheBehaviorTest {
 
     @InjectWireMock
-    private WireMockServer wireMockServer;
+    private transient WireMockServer wireMockServer;
 
     @Autowired
-    private AuditionIntegrationClient auditionIntegrationClient;
+    private transient AuditionIntegrationClient auditionIntegrationClient;
 
     @Autowired(required = false)
-    private CacheManager cacheManager;
+    private transient CacheManager cacheManager;
 
     private void clearCaches() {
         if (cacheManager == null) {
             return;
         }
         cacheManager.getCacheNames().forEach(name -> {
-            Cache c = cacheManager.getCache(name);
+            final Cache c = cacheManager.getCache(name);
             if (c != null) {
                 c.clear();
             }

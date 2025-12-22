@@ -37,21 +37,25 @@ import org.springframework.http.client.ClientHttpResponse;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("RestTemplateLoggingInterceptor Unit Tests")
+@SuppressWarnings({"PMD.ExcessiveImports", "PMD.CloseResource"})
 class RestTemplateLoggingInterceptorTest {
 
-    @Mock
-    private AuditionLogger auditionLogger;
+    private static final String EXAMPLE_API_URL = "http://example.com/api";
+    private static final int LARGE_BODY_SIZE = 11_000;
 
     @Mock
-    private HttpRequest httpRequest;
+    private transient AuditionLogger auditionLogger;
 
     @Mock
-    private ClientHttpRequestExecution execution;
+    private transient HttpRequest httpRequest;
 
     @Mock
-    private ClientHttpResponse httpResponse;
+    private transient ClientHttpRequestExecution execution;
 
-    private RestTemplateLoggingInterceptor interceptor;
+    @Mock
+    private transient ClientHttpResponse httpResponse;
+
+    private transient RestTemplateLoggingInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
@@ -152,8 +156,8 @@ class RestTemplateLoggingInterceptorTest {
 
             // Create a body larger than 10KB
             final StringBuilder largeBody = new StringBuilder();
-            for (int i = 0; i < 11000; i++) {
-                largeBody.append("x");
+            for (int i = 0; i < LARGE_BODY_SIZE; i++) {
+                largeBody.append('x');
             }
             final byte[] requestBody = largeBody.toString().getBytes(StandardCharsets.UTF_8);
             when(execution.execute(httpRequest, requestBody)).thenReturn(httpResponse);
@@ -180,7 +184,7 @@ class RestTemplateLoggingInterceptorTest {
         void shouldMaskAuthorizationHeader() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.set("Authorization", "Bearer secret-token-12345");
             requestHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -215,7 +219,7 @@ class RestTemplateLoggingInterceptorTest {
         void shouldMaskCookieHeader() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.set("Cookie", "sessionId=abc123");
             when(httpRequest.getHeaders()).thenReturn(requestHeaders);
@@ -249,7 +253,7 @@ class RestTemplateLoggingInterceptorTest {
         void shouldMaskApiKeyHeader() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.set("X-API-Key", "my-secret-api-key");
             when(httpRequest.getHeaders()).thenReturn(requestHeaders);
@@ -283,7 +287,7 @@ class RestTemplateLoggingInterceptorTest {
         void shouldPreserveNonSensitiveHeaders() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.setContentType(MediaType.APPLICATION_JSON);
             requestHeaders.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
@@ -453,7 +457,7 @@ class RestTemplateLoggingInterceptorTest {
         void shouldIncludeDurationInLog() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             when(httpRequest.getHeaders()).thenReturn(requestHeaders);
 
@@ -489,7 +493,7 @@ class RestTemplateLoggingInterceptorTest {
         void shouldHandleIOExceptionAndThrow() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             when(httpRequest.getHeaders()).thenReturn(requestHeaders);
 
@@ -506,19 +510,15 @@ class RestTemplateLoggingInterceptorTest {
         void shouldLogErrorDetailsOnIOException() throws IOException {
             // Arrange
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             when(httpRequest.getHeaders()).thenReturn(requestHeaders);
 
             final IOException ioException = new IOException("Connection refused");
             when(execution.execute(httpRequest, new byte[0])).thenThrow(ioException);
 
-            // Act
-            try {
-                interceptor.intercept(httpRequest, new byte[0], execution);
-            } catch (IOException e) {
-                // Expected
-            }
+            assertThrows(IOException.class, () ->
+                interceptor.intercept(httpRequest, new byte[0], execution));
 
             // Assert - should log both request and error
             final ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
@@ -543,7 +543,7 @@ class RestTemplateLoggingInterceptorTest {
 
             try {
                 when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-                when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+                when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
                 final HttpHeaders requestHeaders = new HttpHeaders();
                 when(httpRequest.getHeaders()).thenReturn(requestHeaders);
 
@@ -579,7 +579,7 @@ class RestTemplateLoggingInterceptorTest {
             MDC.clear();
 
             when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
-            when(httpRequest.getURI()).thenReturn(URI.create("http://example.com/api"));
+            when(httpRequest.getURI()).thenReturn(URI.create(EXAMPLE_API_URL));
             final HttpHeaders requestHeaders = new HttpHeaders();
             when(httpRequest.getHeaders()).thenReturn(requestHeaders);
 

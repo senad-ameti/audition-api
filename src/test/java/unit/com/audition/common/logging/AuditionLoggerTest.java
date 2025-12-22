@@ -22,12 +22,16 @@ import org.springframework.http.ProblemDetail;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuditionLogger Unit Tests")
+@SuppressWarnings({"PMD.LoggerIsNotStaticFinal", "PMD.AvoidAccessibilityAlteration", "PMD.EmptyCatchBlock"})
 class AuditionLoggerTest {
 
-    @Mock
-    private Logger mockLogger;
+    private static final String TEST_EXCEPTION_MSG = "Test exception";
+    private static final String POSTS_BY_ID_CACHE = "postsById";
 
-    private AuditionLogger auditionLogger;
+    @Mock
+    private transient Logger mockLogger;
+
+    private transient AuditionLogger auditionLogger;
 
     @BeforeEach
     void setUp() {
@@ -46,7 +50,7 @@ class AuditionLoggerTest {
             final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             problemDetail.setTitle("Test Title");
             problemDetail.setDetail("Test Detail");
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, problemDetail, exception);
@@ -65,7 +69,7 @@ class AuditionLoggerTest {
         void shouldHandleNullProblemDetail() {
             // Arrange
             when(mockLogger.isErrorEnabled()).thenReturn(true);
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, null, exception);
@@ -84,7 +88,7 @@ class AuditionLoggerTest {
             when(mockLogger.isErrorEnabled()).thenReturn(true);
             final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
             // Title is set by forStatus, but detail is null by default
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, problemDetail, exception);
@@ -104,7 +108,7 @@ class AuditionLoggerTest {
             // Arrange
             when(mockLogger.isErrorEnabled()).thenReturn(false);
             final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, problemDetail, exception);
@@ -122,7 +126,7 @@ class AuditionLoggerTest {
             problemDetail.setTitle("Not Found");
             problemDetail.setDetail("Resource not found");
             problemDetail.setInstance(java.net.URI.create("/api/posts/123"));
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, problemDetail, exception);
@@ -142,7 +146,7 @@ class AuditionLoggerTest {
             final ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             problemDetail.setTitle("");  // Set blank title
             problemDetail.setDetail("Test Detail");
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, problemDetail, exception);
@@ -170,7 +174,7 @@ class AuditionLoggerTest {
             } catch (Exception e) {
                 // If reflection fails, this is acceptable for the test
             }
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logStandardProblemDetail(mockLogger, problemDetail, exception);
@@ -429,7 +433,7 @@ class AuditionLoggerTest {
         void logErrorWithExceptionShouldLogMessageAndException() {
             // Arrange
             when(mockLogger.isErrorEnabled()).thenReturn(true);
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logErrorWithException(mockLogger, "Error occurred", exception);
@@ -443,7 +447,7 @@ class AuditionLoggerTest {
         void logErrorWithExceptionShouldNotLogWhenDisabled() {
             // Arrange
             when(mockLogger.isErrorEnabled()).thenReturn(false);
-            final Exception exception = new RuntimeException("Test exception");
+            final Exception exception = new RuntimeException(TEST_EXCEPTION_MSG);
 
             // Act
             auditionLogger.logErrorWithException(mockLogger, "Error occurred", exception);
@@ -490,10 +494,10 @@ class AuditionLoggerTest {
             when(mockLogger.isDebugEnabled()).thenReturn(true);
 
             // Act
-            auditionLogger.logCacheMiss(mockLogger, "postsById", "123");
+            auditionLogger.logCacheMiss(mockLogger, POSTS_BY_ID_CACHE, "123");
 
             // Assert
-            verify(mockLogger).debug("Cache MISS - Cache: {} | Key: {}", "postsById", "123");
+            verify(mockLogger).debug("Cache MISS - Cache: {} | Key: {}", POSTS_BY_ID_CACHE, "123");
         }
 
         @Test
@@ -503,7 +507,7 @@ class AuditionLoggerTest {
             when(mockLogger.isDebugEnabled()).thenReturn(false);
 
             // Act
-            auditionLogger.logCacheMiss(mockLogger, "postsById", "123");
+            auditionLogger.logCacheMiss(mockLogger, POSTS_BY_ID_CACHE, "123");
 
             // Assert
             verify(mockLogger, never()).debug(anyString(), anyString(), anyString());
@@ -516,10 +520,10 @@ class AuditionLoggerTest {
             when(mockLogger.isDebugEnabled()).thenReturn(true);
 
             // Act
-            auditionLogger.logCacheHit(mockLogger, "postsById", 42);
+            auditionLogger.logCacheHit(mockLogger, POSTS_BY_ID_CACHE, 42);
 
             // Assert
-            verify(mockLogger).debug("Cache HIT - Cache: {} | Key: {}", "postsById", 42);
+            verify(mockLogger).debug("Cache HIT - Cache: {} | Key: {}", POSTS_BY_ID_CACHE, 42);
         }
 
         @Test

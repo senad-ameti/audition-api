@@ -20,13 +20,16 @@ import org.wiremock.spring.EnableWireMock;
 @ActiveProfiles("test")
 @EnableWireMock
 @DisplayName("Actuator Security Tests")
+@SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
 class ActuatorSecurityTest {
 
+    private static final int UNAUTHORIZED_STATUS = 401;
+
     @Autowired
-    private MockMvc mockMvc;
+    private transient MockMvc mockMvc;
 
     @Value("${audition.security.actuator-api-key}")
-    private String apiKey;
+    private transient String apiKey;
 
     @Nested
     @DisplayName("Public Actuator Endpoints")
@@ -104,7 +107,7 @@ class ActuatorSecurityTest {
                 .andExpect(result -> {
                     final int status = result.getResponse().getStatus();
                     // Should be anything except 401 Unauthorized
-                    if (status == 401) {
+                    if (status == UNAUTHORIZED_STATUS) {
                         throw new AssertionError("Expected /posts to be publicly accessible but got 401");
                     }
                 });

@@ -1,5 +1,6 @@
 package unit.com.audition.web.validation;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -23,18 +24,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PositiveIntegerValidator Unit Tests")
+@SuppressWarnings("PMD.DataflowAnomalyAnalysis")
 class PositiveIntegerValidatorTest {
 
-    private PositiveIntegerValidator validator;
+    private transient PositiveIntegerValidator validator;
 
     @Mock
-    private ConstraintValidatorContext context;
+    private transient ConstraintValidatorContext context;
 
     @Mock
-    private ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder;
+    private transient ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder;
 
     @Mock
-    private PositiveInteger constraintAnnotation;
+    private transient PositiveInteger constraintAnnotation;
 
     @BeforeEach
     void setUp() {
@@ -51,8 +53,8 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @ValueSource(strings = {"1", "10", "100", "999", "2147483647"})
         @DisplayName("should return true for positive integers")
-        void shouldReturnTrueForPositiveIntegers(String value) {
-            boolean result = validator.isValid(value, context);
+        void shouldReturnTrueForPositiveIntegers(final String value) {
+            final boolean result = validator.isValid(value, context);
 
             assertTrue(result);
             verify(context, never()).disableDefaultConstraintViolation();
@@ -61,8 +63,8 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @ValueSource(strings = {" 1", "1 ", " 1 ", "  10  "})
         @DisplayName("should return true for positive integers with whitespace")
-        void shouldReturnTrueForPositiveIntegersWithWhitespace(String value) {
-            boolean result = validator.isValid(value, context);
+        void shouldReturnTrueForPositiveIntegersWithWhitespace(final String value) {
+            final boolean result = validator.isValid(value, context);
 
             assertTrue(result);
             verify(context, never()).disableDefaultConstraintViolation();
@@ -76,10 +78,10 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @NullSource
         @DisplayName("should return false for null value")
-        void shouldReturnFalseForNullValue(String value) {
+        void shouldReturnFalseForNullValue(final String value) {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = validator.isValid(value, context);
+            final boolean result = validator.isValid(value, context);
 
             assertFalse(result);
             verify(context).disableDefaultConstraintViolation();
@@ -90,10 +92,10 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @ValueSource(strings = {"", " ", "   ", "\t", "\n"})
         @DisplayName("should return false for empty or blank values")
-        void shouldReturnFalseForEmptyOrBlankValues(String value) {
+        void shouldReturnFalseForEmptyOrBlankValues(final String value) {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = validator.isValid(value, context);
+            final boolean result = validator.isValid(value, context);
 
             assertFalse(result);
             verify(context).disableDefaultConstraintViolation();
@@ -111,7 +113,7 @@ class PositiveIntegerValidatorTest {
         void shouldReturnFalseForZero() {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = validator.isValid("0", context);
+            final boolean result = validator.isValid("0", context);
 
             assertFalse(result);
             verify(context).disableDefaultConstraintViolation();
@@ -122,10 +124,10 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @ValueSource(strings = {"-1", "-10", "-100", "-2147483648"})
         @DisplayName("should return false for negative integers")
-        void shouldReturnFalseForNegativeIntegers(String value) {
+        void shouldReturnFalseForNegativeIntegers(final String value) {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = validator.isValid(value, context);
+            final boolean result = validator.isValid(value, context);
 
             assertFalse(result);
             verify(context).disableDefaultConstraintViolation();
@@ -141,10 +143,10 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @ValueSource(strings = {"abc", "1.5", "1a", "a1", "1,000", "1_000", "one", "1e10"})
         @DisplayName("should return false for non-integer strings")
-        void shouldReturnFalseForNonIntegerStrings(String value) {
+        void shouldReturnFalseForNonIntegerStrings(final String value) {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = validator.isValid(value, context);
+            final boolean result = validator.isValid(value, context);
 
             assertFalse(result);
             verify(context).disableDefaultConstraintViolation();
@@ -155,10 +157,10 @@ class PositiveIntegerValidatorTest {
         @ParameterizedTest
         @ValueSource(strings = {"2147483648", "9999999999999999999"})
         @DisplayName("should return false for values exceeding integer range")
-        void shouldReturnFalseForValuesExceedingIntegerRange(String value) {
+        void shouldReturnFalseForValuesExceedingIntegerRange(final String value) {
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = validator.isValid(value, context);
+            final boolean result = validator.isValid(value, context);
 
             assertFalse(result);
             verify(context).disableDefaultConstraintViolation();
@@ -174,24 +176,22 @@ class PositiveIntegerValidatorTest {
         @Test
         @DisplayName("should initialize without errors")
         void shouldInitializeWithoutErrors() {
-            PositiveIntegerValidator newValidator = new PositiveIntegerValidator();
+            final PositiveIntegerValidator newValidator = new PositiveIntegerValidator();
             when(constraintAnnotation.fieldName()).thenReturn("Test Field");
             when(constraintAnnotation.optional()).thenReturn(false);
-            newValidator.initialize(constraintAnnotation);
-            // No exception should be thrown
-            assertTrue(true);
+            assertDoesNotThrow(() -> newValidator.initialize(constraintAnnotation));
         }
 
         @Test
         @DisplayName("should use custom field name in error messages")
         void shouldUseCustomFieldNameInErrorMessages() {
-            PositiveIntegerValidator customValidator = new PositiveIntegerValidator();
+            final PositiveIntegerValidator customValidator = new PositiveIntegerValidator();
             when(constraintAnnotation.fieldName()).thenReturn("Custom Field");
             when(constraintAnnotation.optional()).thenReturn(false);
             customValidator.initialize(constraintAnnotation);
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = customValidator.isValid("0", context);
+            final boolean result = customValidator.isValid("0", context);
 
             assertFalse(result);
             verify(context).buildConstraintViolationWithTemplate("Custom Field must be a positive integer");
@@ -200,12 +200,12 @@ class PositiveIntegerValidatorTest {
         @Test
         @DisplayName("should return true for null when optional is true")
         void shouldReturnTrueForNullWhenOptional() {
-            PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
+            final PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
             when(constraintAnnotation.fieldName()).thenReturn("Optional Field");
             when(constraintAnnotation.optional()).thenReturn(true);
             optionalValidator.initialize(constraintAnnotation);
 
-            boolean result = optionalValidator.isValid(null, context);
+            final boolean result = optionalValidator.isValid(null, context);
 
             assertTrue(result);
             verify(context, never()).disableDefaultConstraintViolation();
@@ -214,12 +214,12 @@ class PositiveIntegerValidatorTest {
         @Test
         @DisplayName("should return true for blank when optional is true")
         void shouldReturnTrueForBlankWhenOptional() {
-            PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
+            final PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
             when(constraintAnnotation.fieldName()).thenReturn("Optional Field");
             when(constraintAnnotation.optional()).thenReturn(true);
             optionalValidator.initialize(constraintAnnotation);
 
-            boolean result = optionalValidator.isValid("  ", context);
+            final boolean result = optionalValidator.isValid("  ", context);
 
             assertTrue(result);
             verify(context, never()).disableDefaultConstraintViolation();
@@ -228,13 +228,13 @@ class PositiveIntegerValidatorTest {
         @Test
         @DisplayName("should still validate positive integer when optional is true and value provided")
         void shouldValidatePositiveIntegerWhenOptionalAndValueProvided() {
-            PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
+            final PositiveIntegerValidator optionalValidator = new PositiveIntegerValidator();
             when(constraintAnnotation.fieldName()).thenReturn("Optional Field");
             when(constraintAnnotation.optional()).thenReturn(true);
             optionalValidator.initialize(constraintAnnotation);
             when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
-            boolean result = optionalValidator.isValid("-1", context);
+            final boolean result = optionalValidator.isValid("-1", context);
 
             assertFalse(result);
             verify(context).buildConstraintViolationWithTemplate("Optional Field must be a positive integer");
