@@ -1,0 +1,29 @@
+package com.audition.web.validation;
+
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Annotation for validating that a string parameter or field represents a positive integer.
+ */
+@Documented
+@Constraint(validatedBy = PositiveIntegerValidator.class)
+@Target({ElementType.PARAMETER, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface PositiveInteger {
+
+    String message() default "must be a positive integer";
+
+    String fieldName() default "Value";
+
+    boolean optional() default false;
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+}

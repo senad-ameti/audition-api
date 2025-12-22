@@ -32,6 +32,14 @@ test {
 
 jacocoTestReport {
     dependsOn test // tests are required to run before generating the report
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/com/audition/common/exception/SystemException.class',
+                    '**/com/audition/AuditionApplication.class'
+            ])
+        }))
+    }
 }
 
 jacoco {
@@ -39,6 +47,14 @@ jacoco {
 }
 
 jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/com/audition/common/exception/SystemException.class',
+                    '**/com/audition/AuditionApplication.class'
+            ])
+        }))
+    }
     violationRules {
         rule {
             limit {

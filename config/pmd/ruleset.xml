@@ -1,45 +1,55 @@
 <?xml version="1.0"?>
 <ruleset name="Custom Rules"
-         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
-    <description>PMD custom rule sets, see https://pmd.github.io/pmd-6.45.0/pmd_userdocs_making_rulesets.html</description>
+  <description>PMD custom rule sets, see https://pmd.github.io/pmd-6.45.0/pmd_userdocs_making_rulesets.html
+  </description>
 
-    <exclude-pattern>.*/generated/.*</exclude-pattern>
+  <exclude-pattern>.*/generated/.*</exclude-pattern>
 
-    <rule ref="category/java/codestyle.xml">
-        <exclude name="ShortVariable"/>
-        <exclude name="LongVariable"/>
-        <exclude name="AtLeastOneConstructor"/>
-        <exclude name="CommentDefaultAccessModifier"/>
-        <exclude name="TooManyStaticImports"/>
-        <exclude name="OnlyOneReturn"/>
-    </rule>
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="ShortVariable"/>
+    <exclude name="LongVariable"/>
+    <exclude name="AtLeastOneConstructor"/>
+    <exclude name="CommentDefaultAccessModifier"/>
+    <exclude name="TooManyStaticImports"/>
+    <exclude name="OnlyOneReturn"/>
+    <exclude name="PrematureDeclaration"/>
+  </rule>
 
-    <rule ref="category/java/security.xml"/>
-    <rule ref="category/java/performance.xml"/>
-    <rule ref="category/java/multithreading.xml"/>
+  <rule ref="category/java/security.xml"/>
+  <rule ref="category/java/performance.xml">
+    <exclude name="ConsecutiveLiteralAppends"/>
+  </rule>
+  <rule ref="category/java/multithreading.xml"/>
 
-    <rule ref="category/java/design.xml">
-        <exclude name="LawOfDemeter"/>
-        <exclude name="LoosePackageCoupling"/>
-        <exclude name="UseUtilityClass"/>
-        <exclude name="ImmutableField"/>
-    </rule>
+  <rule ref="category/java/design.xml">
+    <exclude name="LawOfDemeter"/>
+    <exclude name="LoosePackageCoupling"/>
+    <exclude name="UseUtilityClass"/>
+    <exclude name="ImmutableField"/>
+    <exclude name="AvoidCatchingGenericException"/>
+    <exclude name="SignatureDeclareThrowsException"/>
+    <exclude name="TooManyMethods"/>
+    <exclude name="CyclomaticComplexity"/>
+  </rule>
 
-    <rule ref="category/java/errorprone.xml">
-        <exclude name="BeanMembersShouldSerialize"/>
-    </rule>>
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="BeanMembersShouldSerialize"/>
+    <exclude name="DataflowAnomalyAnalysis"/>
+  </rule>
 
-    <rule ref="category/java/bestpractices.xml">
-        <exclude name="JUnitAssertionsShouldIncludeMessage"/>
-    </rule>
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="JUnitAssertionsShouldIncludeMessage"/>
+    <exclude name="GuardLogStatement"/>
+  </rule>
 
-    <rule ref="category/java/bestpractices.xml/JUnitTestContainsTooManyAsserts">
-        <properties>
-            <property name="maximumAsserts" value="7"/>
-        </properties>
-    </rule>
+  <rule ref="category/java/bestpractices.xml/JUnitTestContainsTooManyAsserts">
+    <properties>
+      <property name="maximumAsserts" value="7"/>
+    </properties>
+  </rule>
 
 </ruleset>

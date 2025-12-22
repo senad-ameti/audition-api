@@ -1,0 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    com.audition.common.logging.RestTemplateLoggingInterceptor: DEBUG
+
+audition:
+  logging:
+    rest-template:
+      enabled: true
+

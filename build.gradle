@@ -1,24 +1,22 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.0.3'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version "${dependencyManagementVersion}"
     id "maven-publish"
     id 'jacoco'
-    id "com.github.spotbugs" version "5.0.14"
-    id "io.freefair.lombok" version "8.0.1"
-    // TODO Enable checkstyle and PMD. Fix all the relevant issues.
-    //id "checkstyle"
-    //id "pmd"
+    id "com.github.spotbugs" version "${spotbugsVersion}"
+    id "io.freefair.lombok" version "${lombokVersion}"
+    id "checkstyle"
+    id "pmd"
 }
 
-group = 'com.audition'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
-targetCompatibility = '17'
+group = "${group}"
+version = "${projectVersion}"
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
 
 
-// TODO allow for code-analysis.gradle to be applied for code analysis.
-// apply from: 'config/code-analysis.gradle'
+apply from: 'config/code-analysis.gradle'
 
 configurations {
     compileOnly {
@@ -31,39 +29,63 @@ repositories {
 }
 
 ext {
-    set('springCloudVersion', "2022.0.1")
-    set('logbackVersion', "1.4.5")
-    set('slf4jVersion', "2.0.5")
-    set('springdocVersion', "2.0.2")
+    set('springCloudVersion', springCloudVersion)
+    set('logbackVersion', logbackVersion)
+    set('slf4jVersion', slf4jVersion)
+    set('wiremockVersion', wiremockVersion)
 }
 
 dependencies {
 
-    // TODO Clean up unused dependencies. Add comments on consideration on any improvements you made.
-    implementation "org.springframework.boot:spring-boot-starter-actuator"
-    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
-    implementation "org.springframework.boot:spring-boot-starter-web"
-    implementation "org.springframework.cloud:spring-cloud-starter-config"
-    implementation "org.springframework.boot:spring-boot-starter-webflux"
-    implementation "org.springframework.boot:spring-boot-starter-aop"
-    implementation "io.micrometer:micrometer-tracing-bridge-brave"
-    implementation "io.micrometer:micrometer-tracing"
-    implementation "io.micrometer:micrometer-registry-prometheus"
-    implementation "io.micrometer:context-propagation"
-    implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j"
-    implementation "org.springframework.cloud:spring-cloud-starter-config"
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+    /* Core Spring Boot Starters - Essential dependencies for the application */
 
-    developmentOnly "org.springframework.boot:spring-boot-devtools"
+    // Web framework for REST API endpoints
+    implementation "org.springframework.boot:spring-boot-starter-web"
+
+    // Health checks and metrics via /actuator endpoints
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+
+    // Bean validation (JSR-303) for request validation (@Valid, custom validators)
+    implementation "org.springframework.boot:spring-boot-starter-validation"
+
+    // Security framework for authentication and authorization
+    implementation "org.springframework.boot:spring-boot-starter-security"
+
+    // Caching abstraction with Caffeine as implementation
+    implementation "org.springframework.boot:spring-boot-starter-cache"
+    implementation "com.github.ben-manes.caffeine:caffeine"
+
+    /* Configuration & Observability */
+
+    // Spring Cloud Config client for externalized configuration
+    implementation "org.springframework.cloud:spring-cloud-starter-config"
+
+    // Prometheus metrics registry for monitoring (runtime only, not needed for compilation)
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
 
+    /* Utilities */
 
+    // Apache Commons Lang3 for utility methods (StringUtils, etc.)
+    implementation "org.apache.commons:commons-lang3:${commonsLang3Version}"
+
+    /* Logging - Note: SLF4J and Logback are already provided by spring-boot-starter-web,
+       but explicit versions ensure consistency and allow custom logback configuration */
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
     implementation "ch.qos.logback:logback-core:${logbackVersion}"
     implementation "ch.qos.logback:logback-classic:${logbackVersion}"
 
+    /* Development Tools */
+
+    // Hot reload and developer tools (only active during development)
+    developmentOnly "org.springframework.boot:spring-boot-devtools"
+
+    /* Test Dependencies */
+
+    // Spring Boot testing framework with JUnit 5, Mockito, AssertJ
     testImplementation "org.springframework.boot:spring-boot-starter-test"
-    testImplementation "io.projectreactor:reactor-test"
+
+    // WireMock for mocking external HTTP services in component tests
+    testImplementation "org.wiremock.integrations:wiremock-spring-boot:${wiremockVersion}"
 }
 
 dependencyManagement {
@@ -83,4 +105,9 @@ tasks.matching { it.name != 'prepareGitHooks' }.all { Task task -> task.dependsO
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+checkstyle {
+    toolVersion = checkstyleToolVersion
+    configDirectory = file("${rootDir}/config/checkstyle")
 }

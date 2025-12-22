@@ -10,19 +10,34 @@ spring:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   mvc:
     throw-exception-if-no-handler-found: true
-  sleuth:
-    sampler:
-      probability: 1.0
+  cache:
+    type: caffeine
 server:
   max-http-request-header-size: 16KB
 management:
-  tracing:
-    sampling:
-      probability: 1.0
   endpoints:
     web:
       exposure:
-        include: '*' #TODO enable only info and health for security purposes. Consider that we may want to still access other actuator endpoints securely.
+        include: '*'
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    com.audition.common.logging.RestTemplateLoggingInterceptor: INFO
+    com.audition.configuration.ResponseHeaderInjector: DEBUG
+
+audition:
+  security:
+    actuator-api-key: ${ACTUATOR_API_KEY:}
+  logging:
+    rest-template:
+      enabled: false
+  tracing:
+    response-headers:
+      enabled: true
+      trace-id-header-name: X-Trace-Id
+      span-id-header-name: X-Span-Id
+  integration:
+    posts-url: https://jsonplaceholder.typicode.com/posts
+    posts-by-id-url: https://jsonplaceholder.typicode.com/posts/{id}
+    post-comments-url: https://jsonplaceholder.typicode.com/posts/{postId}/comments
