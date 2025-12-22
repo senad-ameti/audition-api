@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import com.audition.common.logging.AuditionLogger;
 import com.audition.integration.AuditionIntegrationClient;
 import com.audition.model.AuditionPost;
 import com.audition.model.Comment;
@@ -29,6 +30,10 @@ class AuditionServiceTest {
 
     @Mock
     private transient AuditionIntegrationClient auditionIntegrationClient;
+
+    @Mock
+    @SuppressWarnings("PMD.UnusedPrivateField") // Used by Mockito @InjectMocks
+    private transient AuditionLogger auditionLogger;
 
     @InjectMocks
     private transient AuditionService auditionService;
