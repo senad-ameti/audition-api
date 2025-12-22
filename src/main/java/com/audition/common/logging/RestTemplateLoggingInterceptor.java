@@ -69,6 +69,15 @@ public class RestTemplateLoggingInterceptor implements ClientHttpRequestIntercep
         this.enabled = enabled;
     }
 
+    /**
+     * Intercepts HTTP requests and responses to log details at DEBUG level.
+     *
+     * @param request   the HTTP request
+     * @param body      the request body
+     * @param execution the request execution
+     * @return the HTTP response
+     * @throws IOException if an error occurs during execution
+     */
     @Override
     @NonNull
     public ClientHttpResponse intercept(@NonNull final HttpRequest request, @NonNull final byte[] body,

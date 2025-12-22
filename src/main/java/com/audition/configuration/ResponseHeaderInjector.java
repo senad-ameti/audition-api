@@ -48,6 +48,15 @@ public class ResponseHeaderInjector implements Filter {
             enabled, traceIdHeaderName, spanIdHeaderName);
     }
 
+    /**
+     * Processes the request and injects trace and span IDs into response headers if enabled.
+     *
+     * @param request  the servlet request
+     * @param response the servlet response
+     * @param chain    the filter chain
+     * @throws IOException      if an I/O error occurs
+     * @throws ServletException if a servlet error occurs
+     */
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
         throws IOException, ServletException {

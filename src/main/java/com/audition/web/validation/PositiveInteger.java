@@ -8,6 +8,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation for validating that a string parameter or field represents a positive integer.
+ */
 @Documented
 @Constraint(validatedBy = PositiveIntegerValidator.class)
 @Target({ElementType.PARAMETER, ElementType.FIELD})
@@ -24,4 +27,3 @@ public @interface PositiveInteger {
 
     Class<? extends Payload>[] payload() default {};
 }
-

@@ -18,12 +18,19 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-
+/**
+ * Configuration class for web services, including RestTemplate and ObjectMapper setup.
+ */
 @Configuration
 public class WebServiceConfiguration implements WebMvcConfigurer {
 
     private static final String YEAR_MONTH_DAY_PATTERN = "yyyy-MM-dd";
 
+    /**
+     * Creates and configures an ObjectMapper bean for JSON processing.
+     *
+     * @return the configured ObjectMapper
+     */
     @Bean
     public ObjectMapper objectMapper() {
         final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,6 +53,14 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
         return objectMapper;
     }
 
+    /**
+     * Creates and configures a RestTemplate bean with custom ObjectMapper and logging.
+     *
+     * @param objectMapper   the ObjectMapper to use for JSON conversion
+     * @param auditionLogger the logger for request/response logging
+     * @param loggingEnabled whether logging is enabled
+     * @return the configured RestTemplate
+     */
     @Bean
     public RestTemplate restTemplate(final ObjectMapper objectMapper,
         final AuditionLogger auditionLogger,
@@ -68,6 +83,11 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     }
 
 
+    /**
+     * Creates a SimpleClientHttpRequestFactory for RestTemplate.
+     *
+     * @return the configured SimpleClientHttpRequestFactory
+     */
     private SimpleClientHttpRequestFactory createClientFactory() {
         final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setOutputStreaming(false);

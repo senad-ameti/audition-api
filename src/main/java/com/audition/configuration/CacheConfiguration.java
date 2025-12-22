@@ -20,6 +20,11 @@ public class CacheConfiguration {
     private static final int CACHE_TTL_MINUTES = 15;
     private static final int CACHE_MAX_SIZE = 1000;
 
+    /**
+     * Creates a Caffeine-based CacheManager bean with specified caches and TTL.
+     *
+     * @return the configured CacheManager
+     */
     @Bean
     public CacheManager cacheManager() {
         final CaffeineCacheManager cacheManager = new CaffeineCacheManager("posts", "postsById", "comments",

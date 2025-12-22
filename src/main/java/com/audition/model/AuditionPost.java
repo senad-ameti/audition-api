@@ -4,6 +4,9 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Represents a post in the audition system.
+ */
 @Getter
 @Setter
 public class AuditionPost {

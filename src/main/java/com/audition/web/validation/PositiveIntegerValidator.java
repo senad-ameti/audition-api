@@ -4,17 +4,32 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Validator for ensuring a string represents a positive integer.
+ */
 public class PositiveIntegerValidator implements ConstraintValidator<PositiveInteger, String> {
 
     private transient String fieldName;
     private transient boolean optional;
 
+    /**
+     * Initializes the validator with the constraint annotation parameters.
+     *
+     * @param constraintAnnotation the annotation instance
+     */
     @Override
     public void initialize(final PositiveInteger constraintAnnotation) {
         this.fieldName = constraintAnnotation.fieldName();
         this.optional = constraintAnnotation.optional();
     }
 
+    /**
+     * Validates if the given string is a positive integer.
+     *
+     * @param value   the string value to validate
+     * @param context the validation context
+     * @return true if valid, false otherwise
+     */
     @Override
     public boolean isValid(final String value, final ConstraintValidatorContext context) {
         if (StringUtils.isBlank(value)) {
@@ -44,4 +59,3 @@ public class PositiveIntegerValidator implements ConstraintValidator<PositiveInt
         }
     }
 }
-
