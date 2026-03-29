@@ -2,8 +2,6 @@ package com.audition.model;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
-import lombok.Getter;
-import lombok.Setter;
 
 @SuppressFBWarnings(
     value = "EI_EXPOSE_REP",
@@ -15,11 +13,11 @@ public record AuditionPost(int userId, int id, String title, String body, List<A
         comments = comments != null ? List.copyOf(comments) : List.of();
     }
 
-    public AuditionPost(int userId, int id, String title, String body) {
+    public AuditionPost(final int userId, final int id, final String title, final String body) {
         this(userId, id, title, body, List.of());
     }
 
-    public AuditionPost withComments(List<AuditionComment> comments) {
+    public AuditionPost withComments(final List<AuditionComment> comments) {
         return new AuditionPost(this.userId, this.id, this.title, this.body, comments);
     }
 }

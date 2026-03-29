@@ -15,7 +15,7 @@ public final class FileUtils {
      * @return the content of the resource file as a String
      * @throws IOException if the resource is not found or cannot be read
      */
-    public static String loadResource(String path) throws IOException {
+    public static String loadResource(final String path) throws IOException {
         try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
             if (is == null) {
                 throw new IOException("Resource not found: " + path);

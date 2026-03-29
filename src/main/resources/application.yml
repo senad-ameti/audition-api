@@ -16,7 +16,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*' #TODO enable only info and health for security purposes. Consider that we may want to still access other actuator endpoints securely.
+        include: info, health, prometheus
+  server:
+    port: 8081
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

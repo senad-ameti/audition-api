@@ -14,17 +14,17 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("it")
 @RequiredArgsConstructor
-public abstract class AbstractIntegrationTest {
+public class AbstractIntegrationTest {
+
+    protected final TestRestTemplate restTemplate;
 
     @DynamicPropertySource
-    static void wireMockProperties(DynamicPropertyRegistry registry) {
+    static void wireMockProperties(final DynamicPropertyRegistry registry) {
         AuditionPostMockServers.start();
         registry.add("audition_service_url", () -> "http://localhost:" + AuditionPostMockServers.getPort());
     }
 
-    protected final TestRestTemplate restTemplate;
-
-    protected String loadResource(String filename) throws IOException {
+    protected String loadResource(final String filename) throws IOException {
         return FileUtils.loadResource("response/" + filename);
     }
 }

@@ -1,6 +1,7 @@
 package com.audition.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -34,7 +35,7 @@ class WebServiceConfigurationTest {
     }
 
     @Test
-    void objectMapper_configs() {
+    void objectMapperConfigs() {
         assertThat(objectMapper.getSerializationConfig().getDefaultPropertyInclusion().getValueInclusion())
             .isEqualTo(JsonInclude.Include.NON_EMPTY);
         assertThat(objectMapper.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isFalse();
@@ -42,32 +43,32 @@ class WebServiceConfigurationTest {
     }
 
     @Test
-    void restTemplate_hasMappingJackson2HttpMessageConverter() {
-        boolean hasConverter = restTemplate.getMessageConverters().stream()
+    void restTemplateHasMappingJackson2HttpMessageConverter() {
+        final boolean hasConverter = restTemplate.getMessageConverters().stream()
             .anyMatch(c -> c instanceof MappingJackson2HttpMessageConverter);
         assertThat(hasConverter).isTrue();
     }
 
     @Test
-    void restTemplate_hasBufferingFactory() {
+    void restTemplateHasBufferingFactory() {
         assertThat(restTemplate.getInterceptors()).isNotEmpty();
     }
 
     @Test
-    void loggingInterceptor_logsRequestAndNonEmptyResponse() {
+    void loggingInterceptorLogsRequestAndNonEmptyResponse() {
         mockServer.expect(requestTo(Matchers.containsString("example")))
             .andRespond(withSuccess("{\"key\":\"value\"}", MediaType.APPLICATION_JSON));
 
-        restTemplate.getForObject("https://example.com/test", String.class);
+        assertDoesNotThrow(() -> restTemplate.getForObject("https://example.com/test", String.class));
         mockServer.verify();
     }
 
     @Test
-    void loggingInterceptor_logsRequestAndEmptyResponse() {
+    void loggingInterceptorLogsRequestAndEmptyResponse() {
         mockServer.expect(requestTo(Matchers.containsString("example")))
             .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
 
-        restTemplate.getForObject("https://example.com/empty", String.class);
+        assertDoesNotThrow(() -> restTemplate.getForObject("https://example.com/empty", String.class));
         mockServer.verify();
     }
 }

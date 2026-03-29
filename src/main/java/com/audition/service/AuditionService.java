@@ -5,6 +5,7 @@ import com.audition.model.AuditionComment;
 import com.audition.model.AuditionPost;
 import com.audition.model.AuditionPostFilter;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +15,13 @@ public class AuditionService {
 
     private final AuditionIntegrationClient auditionIntegrationClient;
 
-    public List<AuditionPost> getPosts(AuditionPostFilter filter) {
+    public List<AuditionPost> getPosts(final AuditionPostFilter filter) {
         List<AuditionPost> posts = auditionIntegrationClient.getPosts(filter.userId());
 
         if (filter.title() != null && !filter.title().isBlank()) {
-            String search = filter.title().toLowerCase();
             posts = posts.stream()
-                .filter(p -> p.title() != null && p.title().toLowerCase().contains(search))
+                .filter(p -> p.title() != null && p.title().toLowerCase(Locale.ENGLISH)
+                    .contains(filter.title().toLowerCase(Locale.ENGLISH)))
                 .toList();
         }
 

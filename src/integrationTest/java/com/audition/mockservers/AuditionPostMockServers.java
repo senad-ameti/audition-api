@@ -21,19 +21,21 @@ import java.util.stream.Collectors;
 public class AuditionPostMockServers {
 
     private static WireMockServer wireMockServer;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static synchronized void start() {
-        if (wireMockServer != null && wireMockServer.isRunning()) {
-            return;
+    public static void start() {
+        synchronized (AuditionPostMockServers.class) {
+            if (wireMockServer != null && wireMockServer.isRunning()) {
+                return;
+            }
+            wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+            wireMockServer.start();
+            setupStubs();
         }
-        wireMockServer = new WireMockServer(WireMockConfiguration.options().dynamicPort());
-        wireMockServer.start();
-        setupStubs();
     }
 
     @PreDestroy
-    public final void tearDown() {
+    public final void stopServer() {
         if (wireMockServer.isRunning()) {
             wireMockServer.stop();
         }
@@ -45,11 +47,11 @@ public class AuditionPostMockServers {
 
     private static void setupStubs() {
         try {
-            String allPostsJson = FileUtils.loadResource("downstream/audition-post/all-posts.json");
-            String allCommentsJson = FileUtils.loadResource("downstream/audition-post/all-comments.json");
+            final String allPostsJson = FileUtils.loadResource("downstream/audition-post/all-posts.json");
+            final String allCommentsJson = FileUtils.loadResource("downstream/audition-post/all-comments.json");
 
-            List<Map<String, Object>> allPosts = objectMapper.readValue(allPostsJson, new TypeReference<>() {});
-            List<Map<String, Object>> allComments = objectMapper.readValue(allCommentsJson, new TypeReference<>() {});
+            final List<Map<String, Object>> allPosts = OBJECT_MAPPER.readValue(allPostsJson, new TypeReference<>() {});
+            final List<Map<String, Object>> allComments = OBJECT_MAPPER.readValue(allCommentsJson, new TypeReference<>() {});
 
             stubAllPosts(allPostsJson);
             stubPostsByUserId(allPosts);
@@ -59,33 +61,32 @@ public class AuditionPostMockServers {
             stubAllComments(allCommentsJson);
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to set up WireMock stubs", e);
+            throw new IllegalStateException("Failed to set up WireMock stubs", e);
         }
     }
 
-    private static void stubAllPosts(String allPostsJson) {
+    private static void stubAllPosts(final String allPostsJson) {
         wireMockServer.stubFor(get(urlEqualTo("/posts"))
             .willReturn(okJson(allPostsJson)));
     }
 
-    private static void stubPostsByUserId(List<Map<String, Object>> allPosts) throws IOException {
-        List<Map<String, Object>> userId1Posts = allPosts.stream()
+    private static void stubPostsByUserId(final List<Map<String, Object>> allPosts) throws IOException {
+        final List<Map<String, Object>> userId1Posts = allPosts.stream()
             .filter(p -> Integer.valueOf(1).equals(p.get("userId")))
             .collect(Collectors.toList());
 
         wireMockServer.stubFor(get(urlPathEqualTo("/posts"))
             .withQueryParam("userId", equalTo("1"))
-            .willReturn(okJson(objectMapper.writeValueAsString(userId1Posts))));
+            .willReturn(okJson(OBJECT_MAPPER.writeValueAsString(userId1Posts))));
     }
 
-    private static void stubPostById(List<Map<String, Object>> allPosts) throws IOException {
-        Map<String, Object> post1 = allPosts.stream()
-            .filter(p -> Integer.valueOf(1).equals(p.get("id")))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("Post with id=1 not found in all-posts.json"));
-
+    private static void stubPostById(final List<Map<String, Object>> allPosts) throws IOException {
         wireMockServer.stubFor(get(urlEqualTo("/posts/1"))
-            .willReturn(okJson(objectMapper.writeValueAsString(post1))));
+            .willReturn(okJson(OBJECT_MAPPER.writeValueAsString(
+                allPosts.stream()
+                    .filter(p -> Integer.valueOf(1).equals(p.get("id")))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Post with id=1 not found in all-posts.json"))))));
     }
 
     private static void stubNotFoundPost() {
@@ -93,11 +94,11 @@ public class AuditionPostMockServers {
             .willReturn(notFound().withBody("Not Found")));
     }
 
-    private static void stubCommentsForPost(List<Map<String, Object>> allComments) throws IOException {
-        List<Map<String, Object>> post1Comments = allComments.stream()
+    private static void stubCommentsForPost(final List<Map<String, Object>> allComments) throws IOException {
+        final List<Map<String, Object>> post1Comments = allComments.stream()
             .filter(c -> Integer.valueOf(1).equals(c.get("postId")))
             .collect(Collectors.toList());
-        String post1CommentsJson = objectMapper.writeValueAsString(post1Comments);
+        final String post1CommentsJson = OBJECT_MAPPER.writeValueAsString(post1Comments);
 
         wireMockServer.stubFor(get(urlEqualTo("/posts/1/comments"))
             .willReturn(okJson(post1CommentsJson)));
@@ -110,7 +111,7 @@ public class AuditionPostMockServers {
             .willReturn(okJson(post1CommentsJson)));
     }
 
-    private static void stubAllComments(String allCommentsJson) {
+    private static void stubAllComments(final String allCommentsJson) {
         wireMockServer.stubFor(get(urlEqualTo("/comments"))
             .willReturn(okJson(allCommentsJson)));
     }

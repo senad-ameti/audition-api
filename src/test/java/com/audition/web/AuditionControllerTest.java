@@ -1,5 +1,6 @@
 package com.audition.web;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,9 +36,11 @@ class AuditionControllerTest {
     @MockitoBean
     private AuditionService auditionService;
 
+    @SuppressWarnings("PMD.UnusedPrivateField")
     @MockitoBean
     private Tracer tracer;
 
+    @SuppressWarnings("PMD.UnusedPrivateField")
     @MockitoBean
     private AuditionLogger auditionLogger;
 
@@ -54,7 +57,7 @@ class AuditionControllerTest {
 
     @ParameterizedTest(name = "userId={0} title={1} → HTTP {2}")
     @MethodSource("postParams")
-    void getPosts_withVariousParams(String userId, String title, int expectedStatus) throws Exception {
+    void postsWithVariousParams(final String userId, final String title, final int expectedStatus) {
         when(auditionService.getPosts(any(AuditionPostFilter.class))).thenReturn(List.of(post1, post2));
 
         MockHttpServletRequestBuilder request = get("/posts").accept(MediaType.APPLICATION_JSON);
@@ -65,7 +68,8 @@ class AuditionControllerTest {
             request = request.param("title", title);
         }
 
-        mockMvc.perform(request).andExpect(status().is(expectedStatus));
+        final MockHttpServletRequestBuilder finalRequest = request;
+        assertDoesNotThrow(() -> mockMvc.perform(finalRequest).andExpect(status().is(expectedStatus)));
     }
 
     static Stream<Arguments> postParams() {
@@ -78,75 +82,82 @@ class AuditionControllerTest {
     }
 
     @Test
-    void getPosts_withNoParams_returnsList() throws Exception {
+    void postsWithNoParamsReturnsList() {
         when(auditionService.getPosts(any(AuditionPostFilter.class))).thenReturn(List.of(post1));
 
-        mockMvc.perform(get("/posts").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].id").value(1))
-            .andExpect(jsonPath("$[0].title").value("sunt aut facere"));
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/posts").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].title").value("sunt aut facere")));
     }
 
     // --- GET /posts/{id} ---
 
     @Test
-    void getPostById_withValidId_returnsPost() throws Exception {
+    void postByIdWithValidIdReturnsPost() {
         when(auditionService.getPostById("1")).thenReturn(post1);
 
-        mockMvc.perform(get("/posts/1").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(1));
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/posts/1").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1)));
     }
 
     @Test
-    void getPostById_whenServiceThrows_propagatesError() throws Exception {
+    void postByIdWhenServiceThrowsPropagatesError() {
         when(auditionService.getPostById("999")).thenThrow(
             new com.audition.common.exception.SystemException("Cannot find a Post with id 999", "Resource Not Found", 404));
 
-        mockMvc.perform(get("/posts/999").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/posts/999").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound()));
     }
 
     // --- GET /posts/{id}/comments ---
 
     @Test
-    void getPostWithComments_returnsPostWithComments() throws Exception {
-        List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "name", "email", "body"));
-        AuditionPost postWithComments = post1.withComments(comments);
+    void postWithCommentsReturnsPostWithComments() {
+        final List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "name", "email", "body"));
+        final AuditionPost postWithComments = post1.withComments(comments);
         when(auditionService.getPostWithComments("1")).thenReturn(postWithComments);
 
-        mockMvc.perform(get("/posts/1/comments").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.comments[0].id").value(1));
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/posts/1/comments").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.comments[0].id").value(1)));
     }
 
     @Test
-    void getPostWithComments_whenServiceThrows_propagatesError() throws Exception {
+    void postWithCommentsWhenServiceThrowsPropagatesError() {
         when(auditionService.getPostWithComments("999")).thenThrow(
             new com.audition.common.exception.SystemException("Cannot find a Post with id 999", "Resource Not Found", 404));
 
-        mockMvc.perform(get("/posts/999/comments").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/posts/999/comments").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound()));
     }
 
     // --- GET /comments ---
 
     @Test
-    void getComments_withPostId_returnsComments() throws Exception {
-        List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "name", "email", "body"));
+    void commentsWithPostIdReturnsComments() {
+        final List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "name", "email", "body"));
         when(auditionService.getComments("1")).thenReturn(comments);
 
-        mockMvc.perform(get("/comments").param("postId", "1").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].postId").value(1));
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/comments").param("postId", "1").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].postId").value(1)));
     }
 
     @Test
-    void getComments_withoutPostId_returnsAllComments() throws Exception {
+    void commentsWithoutPostIdReturnsAllComments() {
         when(auditionService.getComments(null)).thenReturn(List.of());
 
-        mockMvc.perform(get("/comments").accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk());
+        assertDoesNotThrow(() ->
+            mockMvc.perform(get("/comments").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()));
     }
 }

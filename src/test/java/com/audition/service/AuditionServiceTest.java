@@ -10,7 +10,6 @@ import com.audition.model.AuditionPost;
 import com.audition.model.AuditionPostFilter;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,9 +36,9 @@ class AuditionServiceTest {
 
     @ParameterizedTest(name = "userId={0} title={1} expectedCount={2}")
     @MethodSource("filterCases")
-    void getPosts_filtersCorrectly(String userId, String title, int expectedCount) {
+    void postsFilteredCorrectly(final String userId, final String title, final int expectedCount) {
         when(client.getPosts(userId)).thenReturn(allPosts);
-        List<AuditionPost> result = service.getPosts(new AuditionPostFilter(userId, title));
+        final List<AuditionPost> result = service.getPosts(new AuditionPostFilter(userId, title));
         assertThat(result).hasSize(expectedCount);
     }
 
@@ -54,22 +53,22 @@ class AuditionServiceTest {
     }
 
     @Test
-    void getPostById_delegatesToClient() {
-        AuditionPost post = new AuditionPost(1, 1, "title", "body");
+    void postByIdDelegatesToClient() {
+        final AuditionPost post = new AuditionPost(1, 1, "title", "body");
         when(client.getPostById("1")).thenReturn(post);
         assertThat(service.getPostById("1")).isEqualTo(post);
     }
 
     @Test
-    void getPostWithComments_delegatesToClient() {
-        AuditionPost post = new AuditionPost(1, 1, "title", "body");
+    void postWithCommentsDelegatesToClient() {
+        final AuditionPost post = new AuditionPost(1, 1, "title", "body");
         when(client.getPostWithComments("1")).thenReturn(post);
         assertThat(service.getPostWithComments("1")).isEqualTo(post);
     }
 
     @Test
-    void getComments_delegatesToClient() {
-        List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "n", "e", "b"));
+    void commentsDelegatesToClient() {
+        final List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "n", "e", "b"));
         when(client.getComments("1")).thenReturn(comments);
         assertThat(service.getComments("1")).isEqualTo(comments);
         verify(client).getComments("1");

@@ -32,49 +32,51 @@ import org.springframework.web.util.UriComponentsBuilder;
 )
 public class AuditionIntegrationClient {
 
+    private static final String AUDITION_SERVICE = "auditionService";
     private final RestTemplate restTemplate;
     private final AuditionLogger auditionLogger;
 
     @Value("${audition_service_url}")
     private String url;
 
-    @CircuitBreaker(name = "auditionService", fallbackMethod = "getPostsFallback")
+    @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getPostsFallback")
     public List<AuditionPost> getPosts(final String userId) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url + "/posts");
+        final UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url + "/posts");
 
         Optional.ofNullable(userId)
             .filter(id -> !id.isBlank())
             .ifPresent(id -> builder.queryParam("userId", id));
 
-        URI uri = builder.encode().build().toUri();
+        final URI uri = builder.encode().build().toUri();
 
-        ResponseEntity<List<AuditionPost>> response =
+        final ResponseEntity<List<AuditionPost>> response =
             restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
 
         return Optional.ofNullable(response.getBody()).orElse(List.of());
     }
 
-    @CircuitBreaker(name = "auditionService", fallbackMethod = "getPostByIdFallback")
+    @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getPostByIdFallback")
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     public AuditionPost getPostById(final String id) {
         try {
             return restTemplate.getForObject(url + "/posts/{id}", AuditionPost.class, id);
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found", 404);
+                throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found", 404, e);
             }
-            throw new SystemException(e.getResponseBodyAsString(), "External Service Error", e.getStatusCode().value());
+            throw new SystemException(e.getResponseBodyAsString(), "External Service Error", e.getStatusCode().value(), e);
         } catch (Exception e) {
-            throw new SystemException(e.getMessage(), "Unexpected Error", 500);
+            throw new SystemException(e.getMessage(), "Unexpected Error", 500, e);
         }
     }
 
-    @CircuitBreaker(name = "auditionService", fallbackMethod = "getPostWithCommentsFallback")
+    @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getPostWithCommentsFallback")
     public AuditionPost getPostWithComments(final String postId) {
 
-        CompletableFuture<AuditionPost> postFuture = CompletableFuture
+        final CompletableFuture<AuditionPost> postFuture = CompletableFuture
             .supplyAsync(() -> getPostById(postId));
 
-        CompletableFuture<List<AuditionComment>> commentsFuture = CompletableFuture
+        final CompletableFuture<List<AuditionComment>> commentsFuture = CompletableFuture
             .supplyAsync(() -> getCommentsByPostId(postId));
 
         try {
@@ -82,32 +84,32 @@ public class AuditionIntegrationClient {
                 .thenCombine(commentsFuture, AuditionPost::withComments)
                 .join();
         } catch (CompletionException e) {
-            Throwable cause = e.getCause();
+            final Throwable cause = e.getCause();
             if (cause instanceof SystemException) {
                 throw (SystemException) cause;
             }
-            throw new SystemException(cause.getMessage(), "Unexpected Error", 500);
+            throw new SystemException(cause.getMessage(), "Unexpected Error", 500, e);
         }
     }
 
-    @CircuitBreaker(name = "auditionService", fallbackMethod = "getCommentsByPostIdFallback")
+    @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getCommentsByPostIdFallback")
     public List<AuditionComment> getCommentsByPostId(final String postId) {
-        URI uri = UriComponentsBuilder
+        final URI uri = UriComponentsBuilder
             .fromUriString(url)
             .path("/posts/{postId}/comments")
             .buildAndExpand(postId)
             .encode()
             .toUri();
 
-        ResponseEntity<List<AuditionComment>> response =
+        final ResponseEntity<List<AuditionComment>> response =
             restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
 
         return Optional.ofNullable(response.getBody()).orElse(List.of());
     }
 
-    @CircuitBreaker(name = "auditionService", fallbackMethod = "getCommentsFallback")
+    @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getCommentsFallback")
     public List<AuditionComment> getComments(final String postId) {
-        UriComponentsBuilder builder = UriComponentsBuilder
+        final UriComponentsBuilder builder = UriComponentsBuilder
             .fromUriString(url)
             .path("/comments");
 
@@ -115,36 +117,50 @@ public class AuditionIntegrationClient {
             .filter(id -> !id.isBlank())
             .ifPresent(id -> builder.queryParam("postId", id));
 
-        URI uri = builder.encode().build().toUri();
+        final URI uri = builder.encode().build().toUri();
 
-        ResponseEntity<List<AuditionComment>> response =
+        final ResponseEntity<List<AuditionComment>> response =
             restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
 
         return Optional.ofNullable(response.getBody()).orElse(List.of());
     }
 
-    private List<AuditionPost> getPostsFallback(Throwable ex) {
-        auditionLogger.warn(log, "Circuit breaker triggered for getPosts, reason= " + ex.getMessage());
+    List<AuditionPost> getPostsFallback(final Throwable ex) {
+        if (log.isWarnEnabled()) {
+            auditionLogger.warn(log, "Circuit breaker triggered for getPosts, " + getFallbackLogReason(ex));
+        }
         return List.of();
     }
 
-    private AuditionPost getPostByIdFallback(String id, Throwable ex) {
-        auditionLogger.warn(log, "Circuit breaker triggered for getPostById id= " + id + ", reason= " + ex.getMessage());
+    AuditionPost getPostByIdFallback(final String id, final Throwable ex) {
+        if (log.isWarnEnabled()) {
+            auditionLogger.warn(log, "Circuit breaker triggered for getPostById id= " + id + getFallbackLogReason(ex));
+        }
         throw new SystemException("Service unavailable for post id " + id, "Service Unavailable", 503);
     }
 
-    private AuditionPost getPostWithCommentsFallback(String postId, Throwable ex) {
-        auditionLogger.warn(log, "Circuit breaker triggered for getPostWithComments postId= " + postId + ", reason= " + ex.getMessage());
+    AuditionPost getPostWithCommentsFallback(final String postId, final Throwable ex) {
+        if (log.isWarnEnabled()) {
+            auditionLogger.warn(log, "Circuit breaker triggered for getPostWithComments postId= " + postId + getFallbackLogReason(ex));
+        }
         throw new SystemException("Service unavailable for post id " + postId, "Service Unavailable", 503);
     }
 
-    private List<AuditionComment> getCommentsByPostIdFallback(String postId, Throwable ex) {
-        auditionLogger.warn(log, "Circuit breaker triggered for getCommentsByPostId postId= " + postId + ", reason= " + ex.getMessage());
+    List<AuditionComment> getCommentsByPostIdFallback(final String postId, final Throwable ex) {
+        if (log.isWarnEnabled()) {
+            auditionLogger.warn(log, "Circuit breaker triggered for getCommentsByPostId postId= " + postId + getFallbackLogReason(ex));
+        }
         return List.of();
     }
 
-    private List<AuditionComment> getCommentsFallback(String postId, Throwable ex) {
-        auditionLogger.warn(log, "Circuit breaker triggered for getComments postId= " + postId + ", reason= " + ex.getMessage());
+    List<AuditionComment> getCommentsFallback(final String postId, final Throwable ex) {
+        if (log.isWarnEnabled()) {
+            auditionLogger.warn(log, "Circuit breaker triggered for getComments postId= " + postId + getFallbackLogReason(ex));
+        }
         return List.of();
+    }
+
+    private String getFallbackLogReason(final Throwable ex) {
+        return ", reason= " + ex.getMessage();
     }
 }

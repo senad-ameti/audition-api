@@ -39,6 +39,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(HttpClientErrorException.class)
     ProblemDetail handleHttpClientException(final HttpClientErrorException e) {
+        logger.logHttpStatusCodeError(LOG, e.getMessage(), e.getStatusCode().value());
         return createProblemDetail(e, e.getStatusCode());
     }
 
@@ -112,7 +113,9 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     private HttpStatusCode getHttpStatusCodeFromSystemException(final SystemException exception) {
         final Integer statusCode = exception.getStatusCode();
         if (statusCode == null) {
-            logger.info(LOG, ERROR_MESSAGE + null);
+            if (LOG.isInfoEnabled()) {
+                logger.info(LOG, ERROR_MESSAGE + null);
+            }
             return INTERNAL_SERVER_ERROR;
         }
         return HttpStatusCode.valueOf(statusCode);

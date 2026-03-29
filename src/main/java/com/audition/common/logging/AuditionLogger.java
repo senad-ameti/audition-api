@@ -2,7 +2,6 @@ package com.audition.common.logging;
 
 import java.net.URI;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Component;

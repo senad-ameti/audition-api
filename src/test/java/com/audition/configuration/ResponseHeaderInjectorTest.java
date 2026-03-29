@@ -25,16 +25,16 @@ class ResponseHeaderInjectorTest {
     private ResponseHeaderInjector injector;
 
     @Test
-    void preHandle_withActiveSpan_setsTraceHeaders() {
-        Span span = mock(Span.class);
-        TraceContext ctx = mock(TraceContext.class);
+    void preHandleWithActiveSpanSetsTraceHeaders() {
+        final Span span = mock(Span.class);
+        final TraceContext ctx = mock(TraceContext.class);
         when(tracer.currentSpan()).thenReturn(span);
         when(span.context()).thenReturn(ctx);
         when(ctx.traceId()).thenReturn("abc123");
         when(ctx.spanId()).thenReturn("def456");
 
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        boolean result = injector.preHandle(new MockHttpServletRequest(), response, new Object());
+        final MockHttpServletResponse response = new MockHttpServletResponse();
+        final boolean result = injector.preHandle(new MockHttpServletRequest(), response, new Object());
 
         assertThat(result).isTrue();
         assertThat(response.getHeader("X-Trace-Id")).isEqualTo("abc123");
@@ -42,11 +42,11 @@ class ResponseHeaderInjectorTest {
     }
 
     @Test
-    void preHandle_withNoActiveSpan_setsNoHeaders() {
+    void preHandleWithNoActiveSpanSetsNoHeaders() {
         when(tracer.currentSpan()).thenReturn(null);
 
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        boolean result = injector.preHandle(new MockHttpServletRequest(), response, new Object());
+        final MockHttpServletResponse response = new MockHttpServletResponse();
+        final boolean result = injector.preHandle(new MockHttpServletRequest(), response, new Object());
 
         assertThat(result).isTrue();
         assertThat(response.getHeader("X-Trace-Id")).isNull();

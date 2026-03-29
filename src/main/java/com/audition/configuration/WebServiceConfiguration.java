@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -45,7 +46,7 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     public JsonMapper objectMapper() {
         return JsonMapper.builder()
             // Allows for date format as yyyy-MM-dd
-            .defaultDateFormat(new SimpleDateFormat(YEAR_MONTH_DAY_PATTERN))
+            .defaultDateFormat(new SimpleDateFormat(YEAR_MONTH_DAY_PATTERN, Locale.ENGLISH))
             // Does not fail on unknown properties
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             // Maps to camelCase
@@ -58,12 +59,12 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public RestTemplate restTemplate(JsonMapper objectMapper, AuditionLogger auditionLogger) {
+    public RestTemplate restTemplate(final JsonMapper objectMapper, final AuditionLogger auditionLogger) {
         final RestTemplate restTemplate = new RestTemplate(
             new BufferingClientHttpRequestFactory(createClientFactory()));
 
         // Use object mapper
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
+        final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
         restTemplate.setMessageConverters(List.of(converter));
 
         // Logging interceptor using AuditionLogger with tracing support
@@ -78,35 +79,44 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
         return requestFactory;
     }
 
-    private ClientHttpRequestInterceptor loggingInterceptor(AuditionLogger auditionLogger) {
+    private ClientHttpRequestInterceptor loggingInterceptor(final AuditionLogger auditionLogger) {
         return (request, body, execution) -> {
             logRequest(request, body, auditionLogger);
-            ClientHttpResponse response = execution.execute(request, body);
+            final ClientHttpResponse response = execution.execute(request, body);
             logResponse(response, auditionLogger);
             return response;
         };
     }
 
-    private void logRequest(HttpRequest request, byte[] body, AuditionLogger auditionLogger) {
-        auditionLogger.info(log, "Request URI: {}", request.getURI());
-        auditionLogger.info(log, "Request Method: {}", request.getMethod());
-        auditionLogger.info(log, "Request Headers: {}", request.getHeaders());
-        auditionLogger.info(log, "Request Body: {}", new String(body, StandardCharsets.UTF_8));
+    private void logRequest(final HttpRequest request, final byte[] body, final AuditionLogger auditionLogger) {
+        if (log.isInfoEnabled()) {
+            auditionLogger.info(log, "Request URI: {}", request.getURI());
+            auditionLogger.info(log, "Request Method: {}", request.getMethod());
+            auditionLogger.info(log, "Request Headers: {}", request.getHeaders());
+            auditionLogger.info(log, "Request Body: {}", new String(body, StandardCharsets.UTF_8));
+        }
     }
 
-    private void logResponse(ClientHttpResponse response, AuditionLogger auditionLogger) throws IOException {
-        auditionLogger.info(log, "Response Status: {}", response.getStatusCode());
+    private void logResponse(final ClientHttpResponse response, final AuditionLogger auditionLogger) throws IOException {
+        if (log.isInfoEnabled()) {
+            auditionLogger.info(log, "Response Status: {}", response.getStatusCode());
+        }
 
-        StringBuilder responseBody = new StringBuilder();
+        final StringBuilder responseBody = new StringBuilder();
         try (BufferedReader bufferedReader = new BufferedReader(
             new InputStreamReader(response.getBody(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
+            String line = bufferedReader.readLine();
+            while (line != null) {
                 responseBody.append(line).append(System.lineSeparator());
+                line = bufferedReader.readLine();
             }
         }
-        auditionLogger.info(log, "Status code  : {}" + response.getStatusCode());
-        auditionLogger.info(log, "Headers      : {}" + response.getHeaders());
-        auditionLogger.debug(log, "Response body: {}" + responseBody);
+        if (log.isInfoEnabled()) {
+            auditionLogger.info(log, "Status code  : {}", response.getStatusCode());
+            auditionLogger.info(log, "Headers      : {}", response.getHeaders());
+        }
+        if (log.isDebugEnabled()) {
+            auditionLogger.debug(log, "Response body: " + responseBody);
+        }
     }
 }
