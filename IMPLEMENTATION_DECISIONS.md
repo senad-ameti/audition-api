@@ -40,6 +40,29 @@ Every method in `AuditionIntegrationClient` is annotated with `@CircuitBreaker`.
 
 ---
 
+## API Documentation
+
+### OpenAPI / Swagger UI
+The API is documented using SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui`). Every endpoint is annotated with `@Operation`, `@ApiResponses`, and `@Parameter` to produce a complete, machine-readable specification.
+
+| URL | Description |
+|---|---|
+| `http://localhost:8080/swagger-ui.html` | Interactive Swagger UI (redirects to `/swagger-ui/index.html`) |
+| `http://localhost:8080/api-docs` | Raw OpenAPI 3.1 JSON spec |
+
+Both paths are exposed via `management.endpoints.web.exposure.include` and configured in `application.yml`:
+```yaml
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+```
+
+The spec documents all four endpoints (`GET /posts`, `GET /posts/{id}`, `GET /posts/{id}/comments`, `GET /comments`), their query parameters, path variables, response schemas, and all possible HTTP status codes including `400`, `404`, `500`, and `503` with `ProblemDetail` response bodies.
+
+---
+
 ## Observability
 
 ### Distributed tracing
