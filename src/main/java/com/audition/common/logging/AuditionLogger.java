@@ -1,5 +1,7 @@
 package com.audition.common.logging;
 
+import java.net.URI;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.http.ProblemDetail;
@@ -58,12 +60,17 @@ public class AuditionLogger {
     }
 
     private String createStandardProblemDetailMessage(final ProblemDetail standardProblemDetail) {
-        // TODO Add implementation here.
-        return StringUtils.EMPTY;
+        return String.format("Problem Detail Error: status=%d, title=%s, detail=%s, instance=%s",
+            standardProblemDetail.getStatus(),
+            Optional.ofNullable(standardProblemDetail.getTitle()).orElse("N/A"),
+            Optional.ofNullable(standardProblemDetail.getDetail()).orElse("N/A"),
+            Optional.ofNullable(standardProblemDetail.getInstance())
+                .map(URI::toString)
+                .orElse("N/A")
+        );
     }
 
     private String createBasicErrorResponseMessage(final Integer errorCode, final String message) {
-        // TODO Add implementation here.
-        return StringUtils.EMPTY;
+        return String.format("Error Code=%d, Message=%s", errorCode, message);
     }
 }

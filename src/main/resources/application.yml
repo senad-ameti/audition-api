@@ -1,3 +1,6 @@
+server:
+  port: 8080
+  max-http-request-header-size: 16KB
 spring:
   application:
     name: audition-api
@@ -5,20 +8,11 @@ spring:
     import: "optional:configserver:"
   main:
     allow-bean-definition-overriding: true
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-  mvc:
-    throw-exception-if-no-handler-found: true
-  sleuth:
-    sampler:
-      probability: 1.0
-server:
-  max-http-request-header-size: 16KB
 management:
   tracing:
-    sampling:
-      probability: 1.0
+    propagation:
+      consume: b3_multi
+      produce: b3_multi
   endpoints:
     web:
       exposure:
@@ -26,3 +20,23 @@ management:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+
+downstream:
+  services:
+    audition:
+      url: ${audition_service_url}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      auditionService:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10           # evaluate every 10 calls
+        failure-rate-threshold: 50        # open circuit if 50% of calls fail
+        wait-duration-in-open-state: 10s  # wait before moving to HALF_OPEN
+        slow-call-duration-threshold: 3s  # treat slow calls as failures
+        slow-call-rate-threshold: 80
+        register-health-indicator: true
+
+audition_service_url: https://jsonplaceholder.typicode.com

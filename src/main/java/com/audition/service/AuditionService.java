@@ -1,24 +1,41 @@
 package com.audition.service;
 
 import com.audition.integration.AuditionIntegrationClient;
+import com.audition.model.AuditionComment;
 import com.audition.model.AuditionPost;
+import com.audition.model.AuditionPostFilter;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class AuditionService {
 
-    @Autowired
-    private AuditionIntegrationClient auditionIntegrationClient;
+    private final AuditionIntegrationClient auditionIntegrationClient;
 
+    public List<AuditionPost> getPosts(AuditionPostFilter filter) {
+        List<AuditionPost> posts = auditionIntegrationClient.getPosts(filter.userId());
 
-    public List<AuditionPost> getPosts() {
-        return auditionIntegrationClient.getPosts();
+        if (filter.title() != null && !filter.title().isBlank()) {
+            String search = filter.title().toLowerCase();
+            posts = posts.stream()
+                .filter(p -> p.title() != null && p.title().toLowerCase().contains(search))
+                .toList();
+        }
+
+        return posts;
     }
 
     public AuditionPost getPostById(final String postId) {
         return auditionIntegrationClient.getPostById(postId);
     }
 
+    public AuditionPost getPostWithComments(final String postId) {
+        return auditionIntegrationClient.getPostWithComments(postId);
+    }
+
+    public List<AuditionComment> getComments(final String postId) {
+        return auditionIntegrationClient.getComments(postId);
+    }
 }
