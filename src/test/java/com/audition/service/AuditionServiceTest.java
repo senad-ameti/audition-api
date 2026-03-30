@@ -1,6 +1,6 @@
 package com.audition.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,16 +39,16 @@ class AuditionServiceTest {
     void postsFilteredCorrectly(final String userId, final String title, final int expectedCount) {
         when(client.getPosts(userId)).thenReturn(allPosts);
         final List<AuditionPost> result = service.getPosts(new AuditionPostFilter(userId, title));
-        assertThat(result).hasSize(expectedCount);
+        assertEquals(expectedCount, result.size());
     }
 
     static Stream<Arguments> filterCases() {
         return Stream.of(
             Arguments.of(null, null, 3),
-            Arguments.of(null, "  ", 3),         // blank title → no filter
-            Arguments.of(null, "vero", 1),        // matches post 3
-            Arguments.of(null, "VERO", 1),        // case-insensitive
-            Arguments.of("1", null, 3)            // userId passed to client, returns all 3
+            Arguments.of(null, "  ", 3),
+            Arguments.of(null, "vero", 1),
+            Arguments.of(null, "VERO", 1),
+            Arguments.of("1", null, 3)
         );
     }
 
@@ -56,21 +56,21 @@ class AuditionServiceTest {
     void postByIdDelegatesToClient() {
         final AuditionPost post = new AuditionPost(1, 1, "title", "body");
         when(client.getPostById("1")).thenReturn(post);
-        assertThat(service.getPostById("1")).isEqualTo(post);
+        assertEquals(post, service.getPostById("1"));
     }
 
     @Test
     void postWithCommentsDelegatesToClient() {
         final AuditionPost post = new AuditionPost(1, 1, "title", "body");
         when(client.getPostWithComments("1")).thenReturn(post);
-        assertThat(service.getPostWithComments("1")).isEqualTo(post);
+        assertEquals(post, service.getPostWithComments("1"));
     }
 
     @Test
     void commentsDelegatesToClient() {
         final List<AuditionComment> comments = List.of(new AuditionComment(1, 1, "n", "e", "b"));
         when(client.getComments("1")).thenReturn(comments);
-        assertThat(service.getComments("1")).isEqualTo(comments);
+        assertEquals(comments, service.getComments("1"));
         verify(client).getComments("1");
     }
 }

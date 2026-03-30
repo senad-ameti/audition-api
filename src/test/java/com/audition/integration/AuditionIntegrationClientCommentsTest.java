@@ -1,6 +1,7 @@
 package com.audition.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -33,31 +34,11 @@ class AuditionIntegrationClientCommentsTest {
     @InjectMocks
     private AuditionIntegrationClient client;
 
-    private static final String CIRCUIT_OPEN = "circuit open";
-
     private final AuditionComment mockComment = new AuditionComment(1, 1, "name", "email", "body");
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientTest.BASE_URL);
-    }
-
-    @Test
-    void commentsByPostIdReturnsComments() {
-        when(restTemplate.exchange(any(), eq(HttpMethod.GET), eq(null),
-            any(ParameterizedTypeReference.class)))
-            .thenReturn(ResponseEntity.ok(List.of(mockComment)));
-
-        assertThat(client.getCommentsByPostId("1")).containsExactly(mockComment);
-    }
-
-    @Test
-    void commentsByPostIdWithNullBodyReturnsEmptyList() {
-        when(restTemplate.exchange(any(), eq(HttpMethod.GET), eq(null),
-            any(ParameterizedTypeReference.class)))
-            .thenReturn(ResponseEntity.ok(null));
-
-        assertThat(client.getCommentsByPostId("1")).isEmpty();
+        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientPostTest.BASE_URL);
     }
 
     @Test
@@ -66,7 +47,7 @@ class AuditionIntegrationClientCommentsTest {
             any(ParameterizedTypeReference.class)))
             .thenReturn(ResponseEntity.ok(List.of(mockComment)));
 
-        assertThat(client.getComments("1")).containsExactly(mockComment);
+        assertEquals(List.of(mockComment), client.getComments("1"));
     }
 
     @Test
@@ -75,22 +56,14 @@ class AuditionIntegrationClientCommentsTest {
             any(ParameterizedTypeReference.class)))
             .thenReturn(ResponseEntity.ok(List.of()));
 
-        assertThat(client.getComments(null)).isEmpty();
-    }
-
-    @Test
-    void commentsByPostIdFallbackLogsAndReturnsEmpty() {
-        final List<AuditionComment> result = ReflectionTestUtils.invokeMethod(
-            client, "getCommentsByPostIdFallback", "1", new RuntimeException(CIRCUIT_OPEN));
-        assertThat(result).isEmpty();
-        verify(auditionLogger).warn(any(), any());
+        assertTrue(client.getComments(null).isEmpty());
     }
 
     @Test
     void commentsFallbackLogsAndReturnsEmpty() {
         final List<AuditionComment> result = ReflectionTestUtils.invokeMethod(
-            client, "getCommentsFallback", "1", new RuntimeException(CIRCUIT_OPEN));
-        assertThat(result).isEmpty();
+            client, "getCommentsFallback", "1", new RuntimeException("circuit open"));
+        assertTrue(result.isEmpty());
         verify(auditionLogger).warn(any(), any());
     }
 }

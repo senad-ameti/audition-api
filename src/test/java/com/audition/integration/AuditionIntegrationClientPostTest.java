@@ -1,12 +1,12 @@
 package com.audition.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.audition.common.exception.SystemException;
 import com.audition.common.logging.AuditionLogger;
 import com.audition.model.AuditionPost;
 import java.util.List;
@@ -26,7 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
-class AuditionIntegrationClientTest {
+class AuditionIntegrationClientPostTest {
 
     @Mock
     private RestTemplate restTemplate;
@@ -38,7 +38,6 @@ class AuditionIntegrationClientTest {
     private AuditionIntegrationClient client;
 
     static final String BASE_URL = "some_url";
-    private static final String CIRCUIT_OPEN = "circuit open";
 
     private final AuditionPost mockPost = new AuditionPost(1, 1, "title", "body");
 
@@ -57,7 +56,7 @@ class AuditionIntegrationClientTest {
 
         final List<AuditionPost> result = client.getPosts(userId);
 
-        assertThat(result).containsExactly(mockPost);
+        assertEquals(List.of(mockPost), result);
     }
 
     @Test
@@ -66,23 +65,14 @@ class AuditionIntegrationClientTest {
             any(ParameterizedTypeReference.class)))
             .thenReturn(ResponseEntity.ok(null));
 
-        assertThat(client.getPosts(null)).isEmpty();
+        assertTrue(client.getPosts(null).isEmpty());
     }
 
     @Test
     void postsFallbackLogsAndReturnsEmpty() {
         final List<AuditionPost> result = ReflectionTestUtils.invokeMethod(
-            client, "getPostsFallback", new RuntimeException(CIRCUIT_OPEN));
-        assertThat(result).isEmpty();
-        verify(auditionLogger).warn(any(), any());
-    }
-
-    @Test
-    void postByIdFallbackLogsAndThrows() {
-        final SystemException thrown = org.junit.jupiter.api.Assertions.assertThrows(SystemException.class,
-            () -> ReflectionTestUtils.invokeMethod(
-                client, "getPostByIdFallback", "1", new RuntimeException(CIRCUIT_OPEN)));
-        assertThat(thrown.getStatusCode()).isEqualTo(503);
+            client, "getPostsFallback", new RuntimeException("circuit open"));
+        assertTrue(result.isEmpty());
         verify(auditionLogger).warn(any(), any());
     }
 }

@@ -11,7 +11,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
 import com.audition.utils.FileUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import jakarta.annotation.PreDestroy;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class AuditionPostMockServers {
 
     private static WireMockServer wireMockServer;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper OBJECT_MAPPER = new JsonMapper();
 
     public static void start() {
         synchronized (AuditionPostMockServers.class) {

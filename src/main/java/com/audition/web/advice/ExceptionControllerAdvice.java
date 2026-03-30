@@ -11,8 +11,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -30,10 +29,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 @RequiredArgsConstructor
 @SuppressWarnings({"PMD.GuardLogStatement"})
+@Slf4j
 public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
     public static final String DEFAULT_TITLE = "API Error Occurred";
-    private static final Logger LOG = LoggerFactory.getLogger(ExceptionControllerAdvice.class);
     private static final String ERROR_MESSAGE = " Error Code from Exception could not be mapped to a valid HttpStatus Code - ";
     public static final String DEFAULT_MESSAGE = "API Error occurred. Please contact support or administrator.";
 
@@ -41,14 +40,14 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(HttpClientErrorException.class)
     ProblemDetail handleHttpClientException(final HttpClientErrorException e) {
-        logger.logHttpStatusCodeError(LOG, e.getMessage(), e.getStatusCode().value());
+        logger.logHttpStatusCodeError(log, e.getMessage(), e.getStatusCode().value());
         return createProblemDetail(e, e.getStatusCode());
     }
 
     @ExceptionHandler(Exception.class)
     ProblemDetail handleMainException(final Exception e) {
         final HttpStatusCode status = getHttpStatusCodeFromException(e);
-        logger.logErrorWithException(LOG, e.getMessage(), e);
+        logger.logErrorWithException(log, e.getMessage(), e);
         return createProblemDetail(e, status);
     }
 
@@ -56,7 +55,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     ProblemDetail handleSystemException(final SystemException e) {
         final HttpStatusCode status = getHttpStatusCodeFromSystemException(e);
         final ProblemDetail problemDetail = createProblemDetail(e, status);
-        logger.logStandardProblemDetail(LOG, problemDetail, e);
+        logger.logStandardProblemDetail(log, problemDetail, e);
         return problemDetail;
     }
 
@@ -71,7 +70,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
         problemDetail.setTitle(DEFAULT_TITLE);
         problemDetail.setDetail(StringUtils.isNotBlank(message) ? message : DEFAULT_MESSAGE);
-        logger.logStandardProblemDetail(LOG, problemDetail, e);
+        logger.logStandardProblemDetail(log, problemDetail, e);
         return problemDetail;
     }
 
@@ -89,7 +88,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
         problemDetail.setTitle(DEFAULT_TITLE);
         problemDetail.setDetail(StringUtils.isNotBlank(message) ? message : DEFAULT_MESSAGE);
 
-        logger.logStandardProblemDetail(LOG, problemDetail, ex);
+        logger.logStandardProblemDetail(log, problemDetail, ex);
 
         return ResponseEntity.badRequest().body(problemDetail);
     }
@@ -115,7 +114,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     private HttpStatusCode getHttpStatusCodeFromSystemException(final SystemException exception) {
         final Integer statusCode = exception.getStatusCode();
         if (statusCode == null) {
-            logger.info(LOG, ERROR_MESSAGE + null);
+            logger.info(log, ERROR_MESSAGE + null);
             return INTERNAL_SERVER_ERROR;
         }
         return HttpStatusCode.valueOf(statusCode);

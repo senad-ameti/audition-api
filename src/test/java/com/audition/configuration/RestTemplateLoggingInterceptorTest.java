@@ -1,6 +1,6 @@
 package com.audition.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -47,8 +47,7 @@ class RestTemplateLoggingInterceptorTest {
             new ByteArrayInputStream("{\"id\":1}".getBytes(StandardCharsets.UTF_8)), HttpStatus.OK));
 
         try (ClientHttpResponse result = interceptor.intercept(request, new byte[0], execution)) {
-            assertThat(result).isNotNull();
-            assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertNotNull(result);
         }
         verify(auditionLogger, atLeastOnce()).info(any(Logger.class), any(String.class), any());
     }

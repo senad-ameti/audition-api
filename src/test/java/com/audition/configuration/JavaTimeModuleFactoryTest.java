@@ -1,6 +1,7 @@
 package com.audition.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,35 +12,20 @@ import org.junit.jupiter.api.Test;
 
 class JavaTimeModuleFactoryTest {
 
-    private final ObjectMapper mapper = new ObjectMapper()
-        .registerModule(JavaTimeModuleFactory.create());
+    private final ObjectMapper mapper = new ObjectMapper().registerModule(JavaTimeModuleFactory.create());
 
     @Test
-    void localDateSerializesAsIsoString() throws JsonProcessingException {
+    void create() throws JsonProcessingException {
+        assertInstanceOf(JavaTimeModule.class, JavaTimeModuleFactory.create());
         final String json = mapper.writeValueAsString(LocalDate.of(2024, 6, 15));
-        assertThat(json).isEqualTo("\"2024-06-15\"");
-    }
+        assertEquals("\"2024-06-15\"", json);
 
-    @Test
-    void localDateDeserializesFromIsoString() throws JsonProcessingException {
-        final LocalDate date = mapper.readValue("\"2024-06-15\"", LocalDate.class);
-        assertThat(date).isEqualTo(LocalDate.of(2024, 6, 15));
-    }
+        assertEquals("\"2024-06-15\"", mapper.writeValueAsString(LocalDate.of(2024, 6, 15)));
+        assertEquals(LocalDate.of(2024, 6, 15), mapper.readValue("\"2024-06-15\"", LocalDate.class));
+        assertEquals("\"2024-06-15T10:30:00\"",
+            mapper.writeValueAsString(LocalDateTime.of(2024, 6, 15, 10, 30, 0)));
+        assertEquals(LocalDateTime.of(2024, 6, 15, 10, 30, 0),
+            mapper.readValue("\"2024-06-15T10:30:00\"", LocalDateTime.class));
 
-    @Test
-    void localDateTimeSerializesAsIsoString() throws JsonProcessingException {
-        final String json = mapper.writeValueAsString(LocalDateTime.of(2024, 6, 15, 10, 30, 0));
-        assertThat(json).isEqualTo("\"2024-06-15T10:30:00\"");
-    }
-
-    @Test
-    void localDateTimeDeserializesFromIsoString() throws JsonProcessingException {
-        final LocalDateTime dt = mapper.readValue("\"2024-06-15T10:30:00\"", LocalDateTime.class);
-        assertThat(dt).isEqualTo(LocalDateTime.of(2024, 6, 15, 10, 30, 0));
-    }
-
-    @Test
-    void createReturnsJavaTimeModule() {
-        assertThat(JavaTimeModuleFactory.create()).isInstanceOf(JavaTimeModule.class);
     }
 }

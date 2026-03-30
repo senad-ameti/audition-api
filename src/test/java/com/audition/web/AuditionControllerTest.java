@@ -58,8 +58,6 @@ class AuditionControllerTest {
         post2 = new AuditionPost(2, 2, "qui est esse", "body2");
     }
 
-    // --- GET /posts ---
-
     @ParameterizedTest(name = "userId={0} title={1} → HTTP {2}")
     @MethodSource("postParams")
     void postsWithVariousParams(final String userId, final String title, final int expectedStatus) {
@@ -82,7 +80,7 @@ class AuditionControllerTest {
             Arguments.of(null, null, 200),
             Arguments.of("1", null, 200),
             Arguments.of(null, "vero", 200),
-            Arguments.of(null, "v", 400)      // < 3 chars → BindException → 400
+            Arguments.of(null, "v", 400)
         );
     }
 
@@ -96,8 +94,6 @@ class AuditionControllerTest {
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].title").value("sunt aut facere")));
     }
-
-    // --- GET /posts/{id} ---
 
     @Test
     void postByIdWithValidIdReturnsPost() {
@@ -118,8 +114,6 @@ class AuditionControllerTest {
             mockMvc.perform(get("/posts/999").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound()));
     }
-
-    // --- GET /posts/{id}/comments ---
 
     @Test
     void postWithCommentsReturnsPostWithComments() {
@@ -143,8 +137,6 @@ class AuditionControllerTest {
             mockMvc.perform(get("/posts/999/comments").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound()));
     }
-
-    // --- GET /comments ---
 
     @Test
     void commentsWithPostIdReturnsComments() {

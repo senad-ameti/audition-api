@@ -1,6 +1,8 @@
 package com.audition.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +19,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class ResponseHeaderInjectorTest {
+
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
+    private static final String SPAN_ID_HEADER = "X-Span-Id";
 
     @Mock
     private Tracer tracer;
@@ -36,9 +41,9 @@ class ResponseHeaderInjectorTest {
         final MockHttpServletResponse response = new MockHttpServletResponse();
         final boolean result = injector.preHandle(new MockHttpServletRequest(), response, new Object());
 
-        assertThat(result).isTrue();
-        assertThat(response.getHeader("X-Trace-Id")).isEqualTo("abc123");
-        assertThat(response.getHeader("X-Span-Id")).isEqualTo("def456");
+        assertTrue(result);
+        assertEquals("abc123", response.getHeader(TRACE_ID_HEADER));
+        assertEquals("def456", response.getHeader(SPAN_ID_HEADER));
     }
 
     @Test
@@ -48,8 +53,8 @@ class ResponseHeaderInjectorTest {
         final MockHttpServletResponse response = new MockHttpServletResponse();
         final boolean result = injector.preHandle(new MockHttpServletRequest(), response, new Object());
 
-        assertThat(result).isTrue();
-        assertThat(response.getHeader("X-Trace-Id")).isNull();
-        assertThat(response.getHeader("X-Span-Id")).isNull();
+        assertTrue(result);
+        assertNull(response.getHeader(TRACE_ID_HEADER));
+        assertNull(response.getHeader(SPAN_ID_HEADER));
     }
 }

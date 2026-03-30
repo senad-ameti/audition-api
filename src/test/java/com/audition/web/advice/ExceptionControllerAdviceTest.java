@@ -1,6 +1,7 @@
 package com.audition.web.advice;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -11,6 +12,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.context.request.ServletWebRequest;
 
+@SuppressWarnings("PMD.ExcessiveImports")
 @ExtendWith(MockitoExtension.class)
 class ExceptionControllerAdviceTest {
 
@@ -45,15 +48,15 @@ class ExceptionControllerAdviceTest {
         final HttpClientErrorException ex = HttpClientErrorException.create(
             HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, new byte[0], null);
         final ProblemDetail result = advice.handleHttpClientException(ex);
-        assertThat(result.getStatus()).isEqualTo(404);
-        assertThat(result.getTitle()).isEqualTo(ExceptionControllerAdvice.DEFAULT_TITLE);
+        assertEquals(404, result.getStatus());
+        assertEquals(ExceptionControllerAdvice.DEFAULT_TITLE, result.getTitle());
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("mainExceptionCases")
     void handleMainException(final String name, final Exception ex, final int expectedStatus) {
         final ProblemDetail result = advice.handleMainException(ex);
-        assertThat(result.getStatus()).isEqualTo(expectedStatus);
+        assertEquals(expectedStatus, result.getStatus());
         verify(logger).logErrorWithException(any(), any(String.class), eq(ex));
     }
 
@@ -70,7 +73,7 @@ class ExceptionControllerAdviceTest {
     @MethodSource("systemExceptionCases")
     void handleSystemException(final String name, final SystemException ex, final int expectedStatus) {
         final ProblemDetail result = advice.handleSystemException(ex);
-        assertThat(result.getStatus()).isEqualTo(expectedStatus);
+        assertEquals(expectedStatus, result.getStatus());
         verify(logger).logStandardProblemDetail(any(), any(), eq(ex));
     }
 
@@ -93,8 +96,9 @@ class ExceptionControllerAdviceTest {
 
         final ProblemDetail result = advice.handleConstraintViolationException(ex);
 
-        assertThat(result.getStatus()).isEqualTo(400);
-        assertThat(result.getDetail()).contains("must not be blank");
+        assertEquals(400, result.getStatus());
+        Assertions.assertNotNull(result.getDetail());
+        assertTrue(result.getDetail().contains("must not be blank"));
         verify(logger).logStandardProblemDetail(any(), any(), eq(ex));
     }
 
@@ -109,11 +113,12 @@ class ExceptionControllerAdviceTest {
             ex, new HttpHeaders(), HttpStatus.BAD_REQUEST,
             new ServletWebRequest(new MockHttpServletRequest()));
 
-        assertThat(response).isNotNull();
-        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        Assertions.assertNotNull(response);
+        assertEquals(400, response.getStatusCode().value());
         final ProblemDetail pd = (ProblemDetail) response.getBody();
-        assertThat(pd).isNotNull();
-        assertThat(pd.getDetail()).contains("at least 3 characters");
+        Assertions.assertNotNull(pd);
+        Assertions.assertNotNull(pd.getDetail());
+        assertTrue(pd.getDetail().contains("at least 3 characters"));
         verify(logger).logStandardProblemDetail(any(), any(), eq(ex));
     }
 }

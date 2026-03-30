@@ -1,7 +1,9 @@
 package com.audition.configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -36,22 +38,22 @@ class WebServiceConfigurationTest {
 
     @Test
     void objectMapperConfigs() {
-        assertThat(objectMapper.getSerializationConfig().getDefaultPropertyInclusion().getValueInclusion())
-            .isEqualTo(JsonInclude.Include.NON_EMPTY);
-        assertThat(objectMapper.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isFalse();
-        assertThat(objectMapper.isEnabled(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)).isFalse();
+        assertEquals(JsonInclude.Include.NON_EMPTY,
+            objectMapper.getSerializationConfig().getDefaultPropertyInclusion().getValueInclusion());
+        assertFalse(objectMapper.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
+        assertFalse(objectMapper.isEnabled(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
     }
 
     @Test
     void restTemplateHasMappingJackson2HttpMessageConverter() {
         final boolean hasConverter = restTemplate.getMessageConverters().stream()
             .anyMatch(c -> c instanceof MappingJackson2HttpMessageConverter);
-        assertThat(hasConverter).isTrue();
+        assertTrue(hasConverter);
     }
 
     @Test
     void restTemplateHasBufferingFactory() {
-        assertThat(restTemplate.getInterceptors()).isNotEmpty();
+        assertFalse(restTemplate.getInterceptors().isEmpty());
     }
 
     @Test

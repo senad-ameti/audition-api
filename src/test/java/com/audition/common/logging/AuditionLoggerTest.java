@@ -38,7 +38,7 @@ class AuditionLoggerTest {
 
     @ParameterizedTest
     @MethodSource(ENABLED_CASES)
-    void infoWhenEnabledLogsMessage(final boolean enabled, final int expectedInvocations) {
+    void infoLogsMessage(final boolean enabled, final int expectedInvocations) {
         when(mockLogger.isInfoEnabled()).thenReturn(enabled);
         auditionLogger.info(mockLogger, "test message");
         verify(mockLogger, times(expectedInvocations)).info("test message");

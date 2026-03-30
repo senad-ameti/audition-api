@@ -2,6 +2,7 @@ package com.audition.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -19,7 +20,7 @@ class PostByIdIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void postByIdReturnsExpectedPost() throws JSONException, java.io.IOException {
+    void postByIdReturnsExpectedPost() throws JSONException, IOException {
         final ResponseEntity<String> response = restTemplate.getForEntity("/posts/1", String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

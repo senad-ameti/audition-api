@@ -1,7 +1,7 @@
 package com.audition.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
@@ -28,14 +28,12 @@ class AuditionIntegrationClientPostWithCommentsTest {
     @InjectMocks
     private AuditionIntegrationClient client;
 
-    private static final String CIRCUIT_OPEN = "circuit open";
-
     private final AuditionPost mockPost = new AuditionPost(1, 1, "title", "body");
     private final AuditionComment mockComment = new AuditionComment(1, 1, "name", "email", "body");
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientTest.BASE_URL);
+        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientPostTest.BASE_URL);
     }
 
     @Test
@@ -46,8 +44,8 @@ class AuditionIntegrationClientPostWithCommentsTest {
 
         final AuditionPost result = spyClient.getPostWithComments("1");
 
-        assertThat(result.id()).isEqualTo(1);
-        assertThat(result.comments()).containsExactly(mockComment);
+        assertEquals(1, result.id());
+        assertEquals(List.of(mockComment), result.comments());
     }
 
     @Test
@@ -56,9 +54,8 @@ class AuditionIntegrationClientPostWithCommentsTest {
         Mockito.doThrow(new SystemException("not found", "Resource Not Found", 404)).when(spyClient).getPostById("1");
         Mockito.doReturn(List.of(mockComment)).when(spyClient).getCommentsByPostId("1");
 
-        assertThatThrownBy(() -> spyClient.getPostWithComments("1"))
-            .isInstanceOf(SystemException.class)
-            .matches(e -> ((SystemException) e).getStatusCode() == 404);
+        final SystemException ex = assertThrows(SystemException.class, () -> spyClient.getPostWithComments("1"));
+        assertEquals(404, ex.getStatusCode());
     }
 
     @Test
@@ -67,17 +64,16 @@ class AuditionIntegrationClientPostWithCommentsTest {
         Mockito.doThrow(new RuntimeException("network error")).when(spyClient).getPostById("1");
         Mockito.doReturn(List.of(mockComment)).when(spyClient).getCommentsByPostId("1");
 
-        assertThatThrownBy(() -> spyClient.getPostWithComments("1"))
-            .isInstanceOf(SystemException.class)
-            .matches(e -> ((SystemException) e).getStatusCode() == 500);
+        final SystemException ex = assertThrows(SystemException.class, () -> spyClient.getPostWithComments("1"));
+        assertEquals(500, ex.getStatusCode());
     }
 
     @Test
     void postWithCommentsFallbackLogsAndThrows() {
-        final SystemException thrown = org.junit.jupiter.api.Assertions.assertThrows(SystemException.class,
+        final SystemException thrown = assertThrows(SystemException.class,
             () -> ReflectionTestUtils.invokeMethod(
-                client, "getPostWithCommentsFallback", "1", new RuntimeException(CIRCUIT_OPEN)));
-        assertThat(thrown.getStatusCode()).isEqualTo(503);
+                client, "getPostWithCommentsFallback", "1", new RuntimeException("circuit open")));
+        assertEquals(503, thrown.getStatusCode());
         verify(auditionLogger).warn(any(), any());
     }
 }

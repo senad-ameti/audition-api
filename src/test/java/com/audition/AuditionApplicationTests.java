@@ -1,6 +1,6 @@
 package com.audition;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ class AuditionApplicationTests {
 
     @Test
     void contextLoads() {
-        assertThat(ctx).isNotNull();
+        assertNotNull(ctx);
     }
 
 }

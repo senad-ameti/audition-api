@@ -1,7 +1,10 @@
 package com.audition.integration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.audition.common.exception.SystemException;
@@ -40,66 +43,70 @@ class AuditionIntegrationClientPostByIdTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientTest.BASE_URL);
+        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientPostTest.BASE_URL);
     }
 
     @Test
     void postByIdReturnsPost() {
-        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+        when(restTemplate.getForObject(AuditionIntegrationClientPostTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
             .thenReturn(mockPost);
 
-        assertThat(client.getPostById("1")).isEqualTo(mockPost);
+        assertEquals(mockPost, client.getPostById("1"));
     }
 
     @Test
     void postByIdOn404ThrowsSystemException404() {
-        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "999"))
+        when(restTemplate.getForObject(AuditionIntegrationClientPostTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "999"))
             .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, new byte[0], null));
 
-        assertThatThrownBy(() -> client.getPostById("999"))
-            .isInstanceOf(SystemException.class)
-            .hasMessageContaining("999")
-            .matches(e -> ((SystemException) e).getStatusCode() == 404);
+        final SystemException ex = assertThrows(SystemException.class, () -> client.getPostById("999"));
+        assertTrue(ex.getMessage().contains("999"));
+        assertEquals(404, ex.getStatusCode());
     }
 
     @Test
     void postByIdOnNullResponseThrowsSystemException404() {
-        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+        when(restTemplate.getForObject(AuditionIntegrationClientPostTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
             .thenReturn(null);
 
-        assertThatThrownBy(() -> client.getPostById("1"))
-            .isInstanceOf(SystemException.class)
-            .matches(e -> ((SystemException) e).getStatusCode() == 404);
+        final SystemException ex = assertThrows(SystemException.class, () -> client.getPostById("1"));
+        assertEquals(404, ex.getStatusCode());
     }
 
     @Test
     void postByIdOnClientErrorThrowsSystemExceptionWithOriginalStatus() {
-        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+        when(restTemplate.getForObject(AuditionIntegrationClientPostTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
             .thenThrow(HttpClientErrorException.create(HttpStatus.FORBIDDEN, "Forbidden", HttpHeaders.EMPTY, new byte[0], null));
 
-        assertThatThrownBy(() -> client.getPostById("1"))
-            .isInstanceOf(SystemException.class)
-            .matches(e -> ((SystemException) e).getStatusCode() == 403);
+        final SystemException ex = assertThrows(SystemException.class, () -> client.getPostById("1"));
+        assertEquals(403, ex.getStatusCode());
     }
 
     @Test
     void postByIdOnServerErrorThrowsSystemExceptionWithOriginalStatus() {
-        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+        when(restTemplate.getForObject(AuditionIntegrationClientPostTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
             .thenThrow(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", HttpHeaders.EMPTY, new byte[0], null));
 
-        assertThatThrownBy(() -> client.getPostById("1"))
-            .isInstanceOf(SystemException.class)
-            .matches(e -> ((SystemException) e).getStatusCode() == 503);
+        final SystemException ex = assertThrows(SystemException.class, () -> client.getPostById("1"));
+        assertEquals(503, ex.getStatusCode());
     }
 
     @Test
     void postByIdOnNetworkErrorThrowsSystemException503() {
-        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+        when(restTemplate.getForObject(AuditionIntegrationClientPostTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
             .thenThrow(new ResourceAccessException("Connection refused"));
 
-        assertThatThrownBy(() -> client.getPostById("1"))
-            .isInstanceOf(SystemException.class)
-            .hasMessageContaining("Connection refused")
-            .matches(e -> ((SystemException) e).getStatusCode() == 503);
+        final SystemException ex = assertThrows(SystemException.class, () -> client.getPostById("1"));
+        assertTrue(ex.getMessage().contains("Connection refused"));
+        assertEquals(503, ex.getStatusCode());
+    }
+
+    @Test
+    void postByIdFallbackLogsAndThrows() {
+        final SystemException thrown = assertThrows(SystemException.class,
+            () -> ReflectionTestUtils.invokeMethod(
+                client, "getPostByIdFallback", "1", new RuntimeException("circuit open")));
+        assertEquals(503, thrown.getStatusCode());
+        verify(auditionLogger).warn(any(), any());
     }
 }

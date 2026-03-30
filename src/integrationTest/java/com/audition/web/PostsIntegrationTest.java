@@ -2,6 +2,7 @@ package com.audition.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
 import java.util.stream.Stream;
 import org.json.JSONException;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class PostsIntegrationTest extends AbstractIntegrationTest {
     @ParameterizedTest(name = "userId={0} title={1}")
     @MethodSource("postFilterCases")
     void postsReturnsExpectedJson(final String userId, final String title, final String responseFile)
-        throws JSONException, java.io.IOException {
+        throws JSONException, IOException {
         final StringBuilder url = new StringBuilder("/posts?");
         if (userId != null) {
             url.append("userId=").append(userId).append('&');
