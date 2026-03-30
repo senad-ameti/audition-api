@@ -38,22 +38,28 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class AuditionIntegrationClient {
 
     private static final String AUDITION_SERVICE = "auditionService";
+    private static final String PATH_POSTS = "/posts";
+    private static final String PATH_COMMENTS = "/comments";
+    private static final String PATH_POST_COMMENTS = "/posts/{postId}/comments";
+    private static final String PARAM_USER_ID = "userId";
+    private static final String PARAM_POST_ID = "postId";
+
     private final RestTemplate restTemplate;
     private final AuditionLogger auditionLogger;
 
     @Value("${audition_service_url}")
-    private String url;
+    private String baseUrl;
 
     @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getPostsFallback")
     public List<AuditionPost> getPosts(final String userId) {
 
         auditionLogger.debug(log, "Retrieving posts for userId=" + userId);
 
-        final UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url + "/posts");
+        final UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl + PATH_POSTS);
 
         Optional.ofNullable(userId)
             .filter(StringUtils::isNotBlank)
-            .ifPresent(id -> builder.queryParam("userId", id));
+            .ifPresent(id -> builder.queryParam(PARAM_USER_ID, id));
 
         final URI uri = builder.encode().build().toUri();
 
@@ -74,23 +80,27 @@ public class AuditionIntegrationClient {
         auditionLogger.debug(log, "Retrieving post by post id=" + id);
 
         try {
-            final AuditionPost post = restTemplate.getForObject(url + "/posts/{id}", AuditionPost.class, id);
+            final AuditionPost post = restTemplate.getForObject(baseUrl + PATH_POSTS + "/{id}", AuditionPost.class, id);
             if (post == null) {
+                auditionLogger.error(log, "Post with id= " + id + " not found in response");
                 throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found", 404);
             }
             return post;
         } catch (HttpClientErrorException e) {
+            auditionLogger.error(log, "Client error occurs when retrieving post for id= " + id + ", status code= " + e.getStatusCode());
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new SystemException("Cannot find a Post with id " + id, "Resource Not Found", 404, e);
             }
             throw toSystemException(e);
         } catch (RestClientException e) {
+            auditionLogger.error(log, "Unexpected error occurs when retrieving post for id= " + id);
             throw toSystemException(e);
         }
     }
 
     @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getPostWithCommentsFallback")
     public AuditionPost getPostWithComments(final String postId) {
+        auditionLogger.debug(log, "Retrieving post with comments by post id=" + postId);
         final CompletableFuture<AuditionPost> postFuture = CompletableFuture
             .supplyAsync(() -> getPostById(postId));
 
@@ -102,6 +112,7 @@ public class AuditionIntegrationClient {
                 .thenCombine(commentsFuture, AuditionPost::withComments)
                 .join();
         } catch (CompletionException e) {
+            auditionLogger.error(log, "Unexpected error occurs when retrieving post with comments for postId= " + postId);
             final Throwable cause = e.getCause();
             if (cause instanceof SystemException se) {
                 throw se;
@@ -112,9 +123,12 @@ public class AuditionIntegrationClient {
 
     @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getCommentsByPostIdFallback")
     public List<AuditionComment> getCommentsByPostId(final String postId) {
+
+        auditionLogger.debug(log, "Retrieving comments by post id=" + postId);
+
         final URI uri = UriComponentsBuilder
-            .fromUriString(url)
-            .path("/posts/{postId}/comments")
+            .fromUriString(baseUrl)
+            .path(PATH_POST_COMMENTS)
             .buildAndExpand(postId)
             .encode()
             .toUri();
@@ -124,13 +138,16 @@ public class AuditionIntegrationClient {
 
     @CircuitBreaker(name = AUDITION_SERVICE, fallbackMethod = "getCommentsFallback")
     public List<AuditionComment> getComments(final String postId) {
+
+        auditionLogger.debug(log, "Retrieving comments with optional postId=" + postId);
+
         final UriComponentsBuilder builder = UriComponentsBuilder
-            .fromUriString(url)
-            .path("/comments");
+            .fromUriString(baseUrl)
+            .path(PATH_COMMENTS);
 
         Optional.ofNullable(postId)
             .filter(StringUtils::isNotBlank)
-            .ifPresent(id -> builder.queryParam("postId", id));
+            .ifPresent(id -> builder.queryParam(PARAM_POST_ID, id));
 
         final URI uri = builder.encode().build().toUri();
 
@@ -144,6 +161,7 @@ public class AuditionIntegrationClient {
                 restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
             return Optional.ofNullable(response.getBody()).orElse(List.of());
         } catch (RestClientException e) {
+            auditionLogger.error(log, "Unexpected error occurs when retrieving comments from uri= " + uri);
             throw toSystemException(e);
         }
     }

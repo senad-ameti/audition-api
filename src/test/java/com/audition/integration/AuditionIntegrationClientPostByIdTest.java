@@ -40,7 +40,7 @@ class AuditionIntegrationClientPostByIdTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(client, "url", AuditionIntegrationClientTest.BASE_URL);
+        ReflectionTestUtils.setField(client, "baseUrl", AuditionIntegrationClientTest.BASE_URL);
     }
 
     @Test

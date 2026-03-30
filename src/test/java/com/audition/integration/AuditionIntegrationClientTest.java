@@ -44,7 +44,7 @@ class AuditionIntegrationClientTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(client, "url", BASE_URL);
+        ReflectionTestUtils.setField(client, "baseUrl", BASE_URL);
     }
 
     @ParameterizedTest
