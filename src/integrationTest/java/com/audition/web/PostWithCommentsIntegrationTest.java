@@ -34,4 +34,11 @@ class PostWithCommentsIntegrationTest extends AbstractIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).contains("Cannot find a Post");
     }
+
+    @Test
+    void postWithCommentsWhenDownstreamReturns500ReturnsError() {
+        final ResponseEntity<String> response = restTemplate.getForEntity("/posts/500/comments", String.class);
+
+        assertThat(response.getStatusCode().value()).isGreaterThanOrEqualTo(500);
+    }
 }

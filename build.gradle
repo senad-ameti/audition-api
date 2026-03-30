@@ -39,6 +39,9 @@ dependencies {
 
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-web"
+    // added: Apache HttpClient 5 for connection pooling on RestTemplate;
+    // version managed by Spring Boot BOM
+    implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "org.springframework.cloud:spring-cloud-starter-config"
     implementation "org.springframework.boot:spring-boot-starter-validation" // added: required for @Valid, @NotBlank, @Size
     implementation "io.micrometer:micrometer-tracing-bridge-brave"

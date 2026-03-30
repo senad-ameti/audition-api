@@ -56,4 +56,11 @@ class PostsIntegrationTest extends AbstractIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("3 characters");
     }
+
+    @Test
+    void postsWithInvalidMethodReturns405() {
+        final ResponseEntity<String> response = restTemplate.postForEntity("/posts", null, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+    }
 }

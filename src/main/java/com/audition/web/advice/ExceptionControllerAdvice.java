@@ -7,6 +7,7 @@ import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import com.audition.common.exception.SystemException;
 import com.audition.common.logging.AuditionLogger;
 import io.micrometer.common.util.StringUtils;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @ControllerAdvice
 @RequiredArgsConstructor
+@SuppressWarnings({"PMD.GuardLogStatement"})
 public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
     public static final String DEFAULT_TITLE = "API Error Occurred";
@@ -62,7 +64,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     ProblemDetail handleConstraintViolationException(final ConstraintViolationException e) {
 
         final String message = e.getConstraintViolations().stream()
-            .map(cv -> cv.getMessage())
+            .map(ConstraintViolation::getMessage)
             .collect(Collectors.joining(", "));
 
         final ProblemDetail problemDetail = ProblemDetail.forStatus(BAD_REQUEST);
@@ -113,9 +115,7 @@ public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
     private HttpStatusCode getHttpStatusCodeFromSystemException(final SystemException exception) {
         final Integer statusCode = exception.getStatusCode();
         if (statusCode == null) {
-            if (LOG.isInfoEnabled()) {
-                logger.info(LOG, ERROR_MESSAGE + null);
-            }
+            logger.info(LOG, ERROR_MESSAGE + null);
             return INTERNAL_SERVER_ERROR;
         }
         return HttpStatusCode.valueOf(statusCode);

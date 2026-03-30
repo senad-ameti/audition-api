@@ -17,6 +17,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,7 +63,17 @@ class AuditionIntegrationClientPostByIdTest {
     }
 
     @Test
-    void postByIdOnOtherHttpErrorThrowsSystemException() {
+    void postByIdOnNullResponseThrowsSystemException404() {
+        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+            .thenReturn(null);
+
+        assertThatThrownBy(() -> client.getPostById("1"))
+            .isInstanceOf(SystemException.class)
+            .matches(e -> ((SystemException) e).getStatusCode() == 404);
+    }
+
+    @Test
+    void postByIdOnClientErrorThrowsSystemExceptionWithOriginalStatus() {
         when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
             .thenThrow(HttpClientErrorException.create(HttpStatus.FORBIDDEN, "Forbidden", HttpHeaders.EMPTY, new byte[0], null));
 
@@ -71,12 +83,23 @@ class AuditionIntegrationClientPostByIdTest {
     }
 
     @Test
-    void postByIdOnGenericExceptionThrowsSystemException500() {
+    void postByIdOnServerErrorThrowsSystemExceptionWithOriginalStatus() {
         when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
-            .thenThrow(new RuntimeException("network error"));
+            .thenThrow(HttpServerErrorException.create(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", HttpHeaders.EMPTY, new byte[0], null));
 
         assertThatThrownBy(() -> client.getPostById("1"))
             .isInstanceOf(SystemException.class)
-            .matches(e -> ((SystemException) e).getStatusCode() == 500);
+            .matches(e -> ((SystemException) e).getStatusCode() == 503);
+    }
+
+    @Test
+    void postByIdOnNetworkErrorThrowsSystemException503() {
+        when(restTemplate.getForObject(AuditionIntegrationClientTest.BASE_URL + POSTS_BY_ID_PATH, AuditionPost.class, "1"))
+            .thenThrow(new ResourceAccessException("Connection refused"));
+
+        assertThatThrownBy(() -> client.getPostById("1"))
+            .isInstanceOf(SystemException.class)
+            .hasMessageContaining("Connection refused")
+            .matches(e -> ((SystemException) e).getStatusCode() == 503);
     }
 }

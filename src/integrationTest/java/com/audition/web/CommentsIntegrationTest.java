@@ -35,4 +35,12 @@ class CommentsIntegrationTest extends AbstractIntegrationTest {
         assertThat(response.getBody()).startsWith("[");
         assertThat(response.getBody()).contains("postId");
     }
+
+    @Test
+    void commentsWithForbiddenPostIdReturns403AndPreservesErrorMessage() {
+        final ResponseEntity<String> response = restTemplate.getForEntity("/comments?postId=403", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).contains("Forbidden: insufficient permissions");
+    }
 }

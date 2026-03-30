@@ -1,29 +1,23 @@
 package com.audition.configuration;
 
-
-import com.audition.common.logging.AuditionLogger;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.util.Timeout;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -31,12 +25,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
 @Configuration
-@Slf4j
 @RequiredArgsConstructor
 public class WebServiceConfiguration implements WebMvcConfigurer {
 
-    private static final String YEAR_MONTH_DAY_PATTERN = "yyyy-MM-dd";
+    @Value("${http.client.pool.max-total:100}")
+    private int poolMaxTotal;
+
+    @Value("${http.client.pool.max-per-route:20}")
+    private int poolMaxPerRoute;
+
+    @Value("${http.client.timeout.connect:5}")
+    private int connectTimeoutSeconds;
+
+    @Value("${http.client.timeout.response:10}")
+    private int responseTimeoutSeconds;
+
+    @Value("${http.client.timeout.connection-request:3}")
+    private int connectionRequestTimeoutSeconds;
+
     private final ResponseHeaderInjector responseHeaderInjector;
+    private final RestTemplateLoggingInterceptor loggingInterceptor;
 
     @Override
     public void addInterceptors(final InterceptorRegistry registry) {
@@ -46,8 +54,7 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     @Bean
     public JsonMapper objectMapper() {
         return JsonMapper.builder()
-            // Allows for date format as yyyy-MM-dd
-            .defaultDateFormat(new SimpleDateFormat(YEAR_MONTH_DAY_PATTERN, Locale.ENGLISH))
+            .addModule(JavaTimeModuleFactory.create())
             // Does not fail on unknown properties
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             // Maps to camelCase
@@ -60,66 +67,42 @@ public class WebServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public RestTemplate restTemplate(final JsonMapper objectMapper, final AuditionLogger auditionLogger) {
+    public RestTemplate restTemplate(final JsonMapper objectMapper,
+        final PoolingHttpClientConnectionManager connectionManager) {
         final RestTemplate restTemplate = new RestTemplate(
-            new BufferingClientHttpRequestFactory(createClientFactory()));
+            new BufferingClientHttpRequestFactory(createClientFactory(connectionManager)));
 
-        // Use object mapper
         final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
         restTemplate.setMessageConverters(List.of(converter));
-
-        // Logging interceptor using AuditionLogger with tracing support
-        restTemplate.setInterceptors(List.of(loggingInterceptor(auditionLogger)));
+        restTemplate.setInterceptors(List.of(loggingInterceptor));
 
         return restTemplate;
     }
 
-    private SimpleClientHttpRequestFactory createClientFactory() {
-        final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-        requestFactory.setReadTimeout(Duration.ofSeconds(10));
-        requestFactory.setOutputStreaming(false);
-        return requestFactory;
+    @Bean
+    public PoolingHttpClientConnectionManager connectionManager() {
+        final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(poolMaxTotal);
+        connectionManager.setDefaultMaxPerRoute(poolMaxPerRoute);
+        connectionManager.setDefaultConnectionConfig(ConnectionConfig.custom()
+            .setConnectTimeout(Timeout.ofSeconds(connectTimeoutSeconds))
+            .build());
+        return connectionManager;
     }
 
-    private ClientHttpRequestInterceptor loggingInterceptor(final AuditionLogger auditionLogger) {
-        return (request, body, execution) -> {
-            logRequest(request, body, auditionLogger);
-            final ClientHttpResponse response = execution.execute(request, body);
-            logResponse(response, auditionLogger);
-            return response;
-        };
-    }
+    private HttpComponentsClientHttpRequestFactory createClientFactory(
+        final PoolingHttpClientConnectionManager connectionManager) {
 
-    private void logRequest(final HttpRequest request, final byte[] body, final AuditionLogger auditionLogger) {
-        if (log.isInfoEnabled()) {
-            auditionLogger.info(log, "Request URI: {}", request.getURI());
-            auditionLogger.info(log, "Request Method: {}", request.getMethod());
-            auditionLogger.info(log, "Request Headers: {}", request.getHeaders());
-            auditionLogger.info(log, "Request Body: {}", new String(body, StandardCharsets.UTF_8));
-        }
-    }
+        final RequestConfig requestConfig = RequestConfig.custom()
+            .setResponseTimeout(Timeout.ofSeconds(responseTimeoutSeconds))
+            .setConnectionRequestTimeout(Timeout.ofSeconds(connectionRequestTimeoutSeconds))
+            .build();
 
-    private void logResponse(final ClientHttpResponse response, final AuditionLogger auditionLogger) throws IOException {
-        if (log.isInfoEnabled()) {
-            auditionLogger.info(log, "Response Status: {}", response.getStatusCode());
-        }
+        final CloseableHttpClient httpClient = HttpClients.custom()
+            .setConnectionManager(connectionManager)
+            .setDefaultRequestConfig(requestConfig)
+            .build();
 
-        final StringBuilder responseBody = new StringBuilder();
-        try (BufferedReader bufferedReader = new BufferedReader(
-            new InputStreamReader(response.getBody(), StandardCharsets.UTF_8))) {
-            String line = bufferedReader.readLine();
-            while (line != null) {
-                responseBody.append(line).append(System.lineSeparator());
-                line = bufferedReader.readLine();
-            }
-        }
-        if (log.isInfoEnabled()) {
-            auditionLogger.info(log, "Status code  : {}", response.getStatusCode());
-            auditionLogger.info(log, "Headers      : {}", response.getHeaders());
-        }
-        if (log.isDebugEnabled()) {
-            auditionLogger.debug(log, "Response body: " + responseBody);
-        }
+        return new HttpComponentsClientHttpRequestFactory(httpClient);
     }
 }

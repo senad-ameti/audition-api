@@ -38,6 +38,32 @@ Every method in `AuditionIntegrationClient` is annotated with `@CircuitBreaker`.
 ### Concurrent fetch for post-with-comments
 `getPostWithComments` uses `CompletableFuture` to fetch the post and its comments concurrently, then combines them. This halves the latency of the combined call compared to sequential fetching.
 
+### RestTemplate with Apache HttpClient 5 connection pool
+`RestTemplate` is backed by `HttpComponentsClientHttpRequestFactory` (Apache HttpClient 5) rather than the default `SimpleClientHttpRequestFactory`. The key difference:
+
+| | `SimpleClientHttpRequestFactory` | `HttpComponentsClientHttpRequestFactory` |
+|---|---|---|
+| Connection reuse | No — new TCP connection per request | Yes — pooled connections |
+| Under load | Thread exhaustion risk | Bounded pool, predictable behaviour |
+| Timeouts | Connect + read | Connect + response + connection-request |
+
+The pool is configured with:
+- **100** max total connections
+- **20** max connections per route (downstream host)
+- **5s** connect timeout — time to establish TCP connection
+- **10s** response timeout — time to wait for response data
+- **3s** connection-request timeout — time to wait for a free connection from the pool
+
+`BufferingClientHttpRequestFactory` still wraps the pool factory so that `RestTemplateLoggingInterceptor` can read the response body without consuming the stream.
+
+### Structured error handling in the integration client
+`AuditionIntegrationClient` maps Spring's `RestClientException` hierarchy to `SystemException` with meaningful HTTP status codes via a private `toSystemException()` helper:
+- `HttpClientErrorException` (4xx) — preserves the original status code and response body
+- `HttpServerErrorException` (5xx) — preserves the original status code and response body
+- `ResourceAccessException` (network / timeout) — maps to **503 Service Unavailable**, signalling that the downstream (not this service) is the problem
+
+This ensures callers always receive a structured `ProblemDetail` response rather than a raw Spring exception.
+
 ---
 
 ## API Documentation

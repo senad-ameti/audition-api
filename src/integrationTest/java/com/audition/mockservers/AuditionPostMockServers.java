@@ -1,9 +1,11 @@
 package com.audition.mockservers;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public class AuditionPostMockServers {
 
     private static WireMockServer wireMockServer;
@@ -57,8 +60,12 @@ public class AuditionPostMockServers {
             stubPostsByUserId(allPosts);
             stubPostById(allPosts);
             stubNotFoundPost();
+            stubForbiddenPost();
+            stubServerErrorPost();
             stubCommentsForPost(allComments);
+            stubServerErrorComments();
             stubAllComments(allCommentsJson);
+            stubForbiddenComments();
 
         } catch (IOException e) {
             throw new IllegalStateException("Failed to set up WireMock stubs", e);
@@ -94,6 +101,16 @@ public class AuditionPostMockServers {
             .willReturn(notFound().withBody("Not Found")));
     }
 
+    private static void stubForbiddenPost() {
+        wireMockServer.stubFor(get(urlEqualTo("/posts/403"))
+            .willReturn(aResponse().withStatus(403).withBody("Forbidden: insufficient permissions")));
+    }
+
+    private static void stubServerErrorPost() {
+        wireMockServer.stubFor(get(urlEqualTo("/posts/500"))
+            .willReturn(serverError().withBody("Internal Server Error: database unavailable")));
+    }
+
     private static void stubCommentsForPost(final List<Map<String, Object>> allComments) throws IOException {
         final List<Map<String, Object>> post1Comments = allComments.stream()
             .filter(c -> Integer.valueOf(1).equals(c.get("postId")))
@@ -111,8 +128,19 @@ public class AuditionPostMockServers {
             .willReturn(okJson(post1CommentsJson)));
     }
 
+    private static void stubServerErrorComments() {
+        wireMockServer.stubFor(get(urlEqualTo("/posts/500/comments"))
+            .willReturn(serverError().withBody("Internal Server Error: comments service down")));
+    }
+
     private static void stubAllComments(final String allCommentsJson) {
         wireMockServer.stubFor(get(urlEqualTo("/comments"))
             .willReturn(okJson(allCommentsJson)));
+    }
+
+    private static void stubForbiddenComments() {
+        wireMockServer.stubFor(get(urlPathEqualTo("/comments"))
+            .withQueryParam("postId", equalTo("403"))
+            .willReturn(aResponse().withStatus(403).withBody("Forbidden: insufficient permissions")));
     }
 }

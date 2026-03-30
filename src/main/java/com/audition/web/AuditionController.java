@@ -18,11 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -56,8 +54,8 @@ public class AuditionController {
         @ApiResponse(responseCode = STATUS_500, description = MSG_INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
-    @RequestMapping(value = "/posts", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody List<AuditionPost> getPosts(@Valid final AuditionPostFilter auditionPostFilter) {
+    @GetMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<AuditionPost> getPosts(@Valid final AuditionPostFilter auditionPostFilter) {
         return auditionService.getPosts(auditionPostFilter);
     }
 
@@ -73,8 +71,8 @@ public class AuditionController {
         @ApiResponse(responseCode = STATUS_503, description = MSG_CIRCUIT_BREAKER,
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
-    @RequestMapping(value = "/posts/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody AuditionPost getPostById(
+    @GetMapping(value = "/posts/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public AuditionPost getPostById(
         @Parameter(description = "Numeric post ID", example = "1", required = true)
         @PathVariable("id")
         @NotBlank(message = "Post id cannot be blank")
@@ -94,8 +92,8 @@ public class AuditionController {
         @ApiResponse(responseCode = STATUS_503, description = MSG_CIRCUIT_BREAKER,
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
-    @RequestMapping(value = "/posts/{id}/comments", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody AuditionPost getPostWithComments(
+    @GetMapping(value = "/posts/{id}/comments", produces = MediaType.APPLICATION_JSON_VALUE)
+    public AuditionPost getPostWithComments(
         @Parameter(description = "Numeric post ID", example = "1", required = true)
         @PathVariable("id")
         @NotBlank(message = "Post id cannot be blank")
@@ -109,8 +107,8 @@ public class AuditionController {
         @ApiResponse(responseCode = STATUS_500, description = MSG_INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
-    @RequestMapping(value = "/comments", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody List<AuditionComment> getComments(
+    @GetMapping(value = "/comments", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<AuditionComment> getComments(
         @Parameter(description = "Filter comments by post ID", example = "1")
         @RequestParam(value = "postId", required = false) final String postId) {
         return auditionService.getComments(postId);

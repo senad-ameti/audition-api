@@ -48,3 +48,13 @@ resilience4j:
         register-health-indicator: true
 
 audition_service_url: https://jsonplaceholder.typicode.com
+
+http:
+  client:
+    pool:
+      max-total: 100       # max total connections across all routes
+      max-per-route: 20    # max connections per downstream host
+    timeout:
+      connect: 5           # seconds to establish TCP connection
+      response: 10         # seconds to wait for response data
+      connection-request: 3 # seconds to wait for a free connection from the pool

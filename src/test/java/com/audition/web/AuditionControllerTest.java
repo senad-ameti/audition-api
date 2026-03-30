@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.audition.common.logging.AuditionLogger;
+import com.audition.configuration.RestTemplateLoggingInterceptor;
 import com.audition.model.AuditionComment;
 import com.audition.model.AuditionPost;
 import com.audition.model.AuditionPostFilter;
@@ -43,6 +44,10 @@ class AuditionControllerTest {
     @SuppressWarnings("PMD.UnusedPrivateField")
     @MockitoBean
     private AuditionLogger auditionLogger;
+
+    @SuppressWarnings("PMD.UnusedPrivateField")
+    @MockitoBean
+    private RestTemplateLoggingInterceptor restTemplateLoggingInterceptor;
 
     private AuditionPost post1;
     private AuditionPost post2;

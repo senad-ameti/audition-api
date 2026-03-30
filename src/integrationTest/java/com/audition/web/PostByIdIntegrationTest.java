@@ -34,4 +34,20 @@ class PostByIdIntegrationTest extends AbstractIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).contains("Cannot find a Post");
     }
+
+    @Test
+    void postByIdWith403ReturnsForbiddenAndPreservesErrorMessage() {
+        final ResponseEntity<String> response = restTemplate.getForEntity("/posts/403", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).contains("Forbidden: insufficient permissions");
+    }
+
+    @Test
+    void postByIdWith500ReturnsInternalServerError() {
+        final ResponseEntity<String> response = restTemplate.getForEntity("/posts/500", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody()).contains("Internal Server Error: database unavailable");
+    }
 }
